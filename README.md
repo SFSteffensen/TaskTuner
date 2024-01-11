@@ -1,31 +1,17 @@
-# Quantum
-
-This template should help get you started developing with Tauri + Solid + TypeScript + TailwindCSS.
+# Schoolday Planner
 
 > [!Caution]
 >  Tauri v2 is approaching stability fast, but it not yet considered ready for production use.
 
-## Cloning it 🐑
-
-You can use the Template button on the GitHub UI and shallow clone this repository. Or, do it with degit:
-
 ```sh
-npx degit atilafassina/quantum
-```
-
-Alternatively, good old `git clone` can also work. It's recommended to make a shallow clone so it doesn't bring entire repository history:
-
-```sh
-git clone --depth 1 https://github.com/atilafassina/quantum
+git clone --depth 1 https://github.com/S3bTheGuy/schoolday-planner.git
 ```
 
 ## Running 🚤
 
 The snippets below use [PNPM](https://pnpm.io) as the package manager and task runner, but Yarn, NPM, Bun, or Cargo should also work with the appropriate syntax.
 
-> 🛟 Check the [Tauri Docs](https://beta.tauri.app/) for more guidance on building your app.
-
-First step is always to install JavaScript dependencies from the root:
+First step is always to install JS dependencies from the root:
 
 ```sh
 pnpm install
@@ -77,12 +63,6 @@ pnpm tauri android dev
 ```
 
 This command will open the Android Pixel simulator.
-
-## Suggested VSCode extensions 💡
-
-- [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode)
-- [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
-- [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss)
 
 ---
 
