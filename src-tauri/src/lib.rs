@@ -1,6 +1,6 @@
 #[tauri::command]
 fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+    format!("Hello, {}! You've been greeted from Rust! via Tauri", name)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
