@@ -1,4 +1,4 @@
-# Schoolday Planner
+# TaskTuner
 
 > [!Caution]
 >  Tauri v2 is approaching stability fast, but it not yet considered ready for production use.
