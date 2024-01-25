@@ -23,7 +23,7 @@ pub fn get_schools() -> HashMap<String, String> {
         .filter_map(|n| {
             let school_id = n.attr("href")?.split('/').nth(2)?.to_string();
             let school_name = n.text();
-            Some((school_name, school_id))
+            Some((school_id, school_name))
         })
         .collect();
 
