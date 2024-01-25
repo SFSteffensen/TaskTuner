@@ -4,9 +4,19 @@ import { invoke } from "@tauri-apps/api/core";
 function App() {
   const [greetMsg, setGreetMsg] = createSignal("");
   const [name, setName] = createSignal("");
+  const [schoolList, setSchoolList] = createSignal<Map<string, string>>(new Map());
+  const [showDropdown, setShowDropdown] = createSignal(false);
+
 
   async function greet() {
     setGreetMsg(await invoke("greet", { name: name() }));
+  }
+
+  async function fetchSchools() {
+    const schools = await invoke('get_schools');
+    const schoolMap = new Map(Object.entries(schools));
+    setSchoolList(schoolMap);
+    setShowDropdown(true);
   }
 
   return (
@@ -66,6 +76,19 @@ function App() {
       </form>
 
       <p>{greetMsg()}</p>
+
+      <button
+        class="text-md rounded-md p-4 bg-neutral-900 text-neutral-200"
+        onClick={() => fetchSchools()}
+      >Hello</button>
+
+      {showDropdown() && (
+        <select>
+          {Array.from(schoolList()).map(([key, value]) => (
+            <option value={key}>{value}</option>
+          ))}
+        </select>
+      )}
     </div>
   );
 }
