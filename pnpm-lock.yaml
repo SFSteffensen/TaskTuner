@@ -8,6 +8,9 @@ dependencies:
   '@tauri-apps/api':
     specifier: ^2.0.0-alpha.13
     version: 2.0.0-alpha.13
+  '@tauri-apps/plugin-fs':
+    specifier: 2.0.0-alpha.6
+    version: 2.0.0-alpha.6
   '@tauri-apps/plugin-shell':
     specifier: ^2.0.0-alpha.3
     version: 2.0.0-alpha.5
@@ -869,6 +872,12 @@ packages:
       '@tauri-apps/cli-win32-ia32-msvc': 2.0.0-alpha.20
       '@tauri-apps/cli-win32-x64-msvc': 2.0.0-alpha.20
     dev: true
+
+  /@tauri-apps/plugin-fs@2.0.0-alpha.6:
+    resolution: {integrity: sha512-f/LFVu33AF+GNQxEo/4/Xj1BZ0Tpr+TFViGs7ZqXdY1E+7W9mcHTL58sK0AHYXSJHfUezFKodazxwbXg4lYCig==}
+    dependencies:
+      '@tauri-apps/api': 2.0.0-alpha.13
+    dev: false
 
   /@tauri-apps/plugin-shell@2.0.0-alpha.5:
     resolution: {integrity: sha512-iAurwn0z16NLOLaiuk3ETLtoG6x/mgFZo75YYKYLiOg70PYMr4LpcjvNPoIPvokdqWWPa7C/6N3eE9jtcbQiLg==}
