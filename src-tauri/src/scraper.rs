@@ -5,7 +5,6 @@ use std::collections::HashMap;
 
 #[tauri::command]
 pub fn get_schools() -> HashMap<String, String> {
-
     // Make a GET request to the iframe's source URL
     let iframe_response = get("https://www.lectio.dk/lectio/login_list.aspx")
         .expect("Failed to send request to iframe source");
