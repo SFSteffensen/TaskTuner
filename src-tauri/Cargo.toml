@@ -1,7 +1,7 @@
 [package]
-name = "schooldayplanner"
+name = "TaskTuner"
 version = "0.0.0"
-description = "App for planning your school day"
+description = "A planner for your school day"
 authors = ["Mikkel M.H. Pedersen & Sebastian F. Stffensen"]
 license = ""
 repository = ""
@@ -21,6 +21,9 @@ tauri = { version = "2.0.0-alpha", features = [] }
 tauri-plugin-shell = "2.0.0-alpha"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+reqwest = { version = "0.11.23", features = ["blocking", "json"] }
+select = "0.6.0"
+tauri-plugin-fs = "2.0.0-alpha"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
