@@ -1,5 +1,5 @@
-import { createEffect, createSignal, onMount } from 'solid-js';
 import { invoke } from '@tauri-apps/api/core';
+import { createEffect, createSignal, onMount } from 'solid-js';
 
 function App() {
   const [schoolList, setSchoolList] = createSignal<Map<string, string>>(new Map());
@@ -9,11 +9,6 @@ function App() {
   const [loginStatus, setLoginStatus] = createSignal('');
   const [username, setUsername] = createSignal('');
   const [password, setPassword] = createSignal('');
-  const isLoginDisabled = () => {
-    // Debug: Log the current state values to verify they're being updated correctly
-    console.log(`Username: ${username()}, Password: ${password()}, School ID: ${selectedSchoolId()}`);
-    return !username() || !password() || !selectedSchoolId();
-  };
   const selectSchool = (id: string, name: string) => {
     setSelectedSchoolId(id);
     setSelectedSchoolName(name);
@@ -46,18 +41,38 @@ function App() {
   }
 
   async function login() {
+    if (!selectedSchoolId() || !username() || !password()) {
+      setLoginStatus("Please fill in all fields.");
+      return;
+    }
     try {
-      const result = await invoke('login', {
+      const response = await invoke('login', {
         schoolId: selectedSchoolId(),
         username: username(),
         password: password(),
       });
-      setLoginStatus(result ? 'Login Successful!' : 'Login Failed. Please check your credentials.');
+      const data = JSON.parse(response);
+
+      if (data.status === "success") {
+        setLoginStatus("Login Successful!");
+
+        // Assuming you want to do something with the dashboard and schedule data
+        // For example, log them to the console or store them in state for rendering
+        console.log("Dashboard Data:", data.dashboard);
+        console.log("Schedule Data:", data.schedule);
+
+
+
+      } else {
+        // Handle error case
+        setLoginStatus(data.message || "Login failed. Please try again.");
+      }
     } catch (error) {
-      console.error(error);
-      setLoginStatus('Login Failed. Please try again.');
+      console.error("Login error:", error);
+      setLoginStatus("An unexpected error occurred. Please try again.");
     }
   }
+
 
   onMount(() => {
     fetchSchools();

@@ -5,9 +5,21 @@ use reqwest::Url;
 use scraper::{Html, Selector};
 use select::document::Document;
 use select::predicate::Name;
+use serde::Deserialize;
+use serde::Serialize;
+use serde_json::json;
 use std::collections::HashMap;
 use std::error::Error;
 use std::sync::Arc;
+
+#[derive(Serialize, Deserialize)]
+struct ClassDetails {
+    class_name: String,
+    teacher: String,
+    room: String,
+    description: String,
+    time: String, // TODO: Use a proper date type probably one from chrono crate
+}
 
 #[tauri::command]
 pub fn get_schools() -> HashMap<String, String> {
@@ -37,17 +49,29 @@ pub fn get_schools() -> HashMap<String, String> {
 }
 
 #[tauri::command]
-pub fn login(schoolId: &str, username: &str, password: &str) -> bool {
-    match attempt_login(schoolId, username, password) {
+pub fn login(school_id: &str, username: &str, password: &str) -> String {
+    match attempt_login(school_id, username, password) {
         Ok(client) => {
-            if let Err(e) = print_page_content(&client, schoolId) {
-                eprintln!("Error printing page content: {}", e);
+            let dashboard_info = scrape_dashboard(&client, school_id);
+            let schedule_info = scrape_schedule(&client, school_id); // Fetch the schedule
+
+            // Handle the results
+            match (dashboard_info, schedule_info) {
+                (Ok(dashboard), Ok(schedule)) => {
+                    // Serialize both dashboard and schedule as JSON
+                    json!({
+                        "status": "success",
+                        "dashboard": dashboard,
+                        "schedule": schedule // Include the schedule in the response
+                    }).to_string()
+                },
+                (Err(e), _) => json!({ "status": "error", "message": format!("Failed to scrape the dashboard: {}", e) }).to_string(),
+                (_, Err(e)) => json!({ "status": "error", "message": format!("Failed to scrape the schedule: {}", e) }).to_string(),
             }
-            true
         }
         Err(e) => {
-            eprintln!("Failed to log in: {}", e);
-            false
+            // Serialize the login error as JSON
+            json!({ "status": "error", "message": format!("Failed to log in: {}", e) }).to_string()
         }
     }
 }
@@ -94,17 +118,71 @@ fn attempt_login(schoolId: &str, username: &str, password: &str) -> Result<Clien
     Ok(client)
 }
 
-fn print_page_content(client: &Client, school_id: &str) -> Result<(), Box<dyn Error>> {
+fn scrape_dashboard(client: &Client, school_id: &str) -> Result<String, Box<dyn Error>> {
     let dashboard_url = format!("https://www.lectio.dk/lectio/{}/forside.aspx", school_id);
-    let response = client.get(&dashboard_url).send()?;
+    let resp = client.get(&dashboard_url).send()?.text()?;
 
-    // Check if the request was successful
-    if response.status().is_success() {
-        let page_content = response.text()?;
-        println!("{}", page_content); // Print the entire page content
-        Ok(())
+    let document = Html::parse_document(&resp);
+    let selector = Selector::parse("div#s_m_Content_Content_aktueltIsland_pa").unwrap();
+
+    let mut scraped_info = String::new();
+
+    if let Some(element) = document.select(&selector).next() {
+        for tr in element.select(&Selector::parse("tr").unwrap()) {
+            // Extracting text from each row
+            let text = tr.text().collect::<Vec<_>>().join(" ");
+            scraped_info.push_str(&format!("{}\n", text.trim()));
+        }
     } else {
-        // Handle error status codes
-        Err(format!("Failed to fetch page. Status code: {}", response.status()).into())
+        return Err("Section not found".into());
     }
+
+    Ok(scraped_info)
+}
+
+fn scrape_schedule(client: &Client, school_id: &str) -> Result<String, Box<dyn Error>> {
+    let schedule_url = format!("https://www.lectio.dk/lectio/{}/SkemaNy.aspx", school_id);
+    let resp = client.get(&schedule_url).send()?.text()?;
+    let document = Html::parse_document(&resp);
+
+    let selector = Selector::parse(
+        "#s_m_Content_Content_SkemaMedNavigation_skemaprintarea .s2skemabrik.s2normal",
+    )
+    .unwrap();
+
+    let mut classes = Vec::new();
+
+    for class_div in document.select(&selector) {
+        let inner_content_selector =
+            Selector::parse(".s2skemabrikInnerContainer .s2skemabrikcontent.s2normal").unwrap();
+        if let Some(inner_content) = class_div.select(&inner_content_selector).next() {
+            // Extract class details. You may need to adjust the parsing logic based on the actual HTML structure
+            let details_text = inner_content.inner_html();
+            let details_parts: Vec<&str> = details_text.split("•").collect();
+            if details_parts.len() >= 3 {
+                let class_name = details_parts[0].trim().to_string();
+                let teacher = details_parts[1].trim().to_string();
+                let room = details_parts[2].trim().to_string();
+
+                let description = inner_content
+                    .select(&Selector::parse("span[style='word-wrap:break-word;']").unwrap())
+                    .next()
+                    .map_or_else(|| "".to_string(), |n| n.text().collect());
+
+                let time = "Placeholder for actual time parsing logic".to_string();
+
+                classes.push(ClassDetails {
+                    class_name,
+                    teacher,
+                    room,
+                    description,
+                    time,
+                });
+            }
+        }
+    }
+
+    let classes_json = serde_json::to_string(&classes)?;
+
+    Ok(classes_json)
 }
