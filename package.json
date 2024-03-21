@@ -21,6 +21,7 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0-alpha.20",
     "autoprefixer": "^10.4.15",
+    "daisyui": "^4.7.3",
     "internal-ip": "^7.0.0",
     "postcss": "^8.4.30",
     "prettier": "^3.0.3",
