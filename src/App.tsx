@@ -5,8 +5,11 @@ function App() {
   const [greetMsg, setGreetMsg] = createSignal("");
   const [name, setName] = createSignal("");
   const [schoolList, setSchoolList] = createSignal<Map<string, string>>(new Map());
+  const [selectedSchoolId, setSelectedSchoolId] = createSignal(""); // Signal for storing the selected school ID
   const [showDropdown, setShowDropdown] = createSignal(false);
-
+  const [loginStatus, setLoginStatus] = createSignal("");
+  const [username, setUsername] = createSignal("");
+  const [password, setPassword] = createSignal("");
 
   async function greet() {
     setGreetMsg(await invoke("greet", { name: name() }));
@@ -19,76 +22,55 @@ function App() {
     setShowDropdown(true);
   }
 
+  async function login() {
+    try {
+      const result = await invoke('login', {
+        schoolId: selectedSchoolId(),
+        username: username(),
+        password: password()
+      });
+      if (result) {
+        setLoginStatus("Login Successful!");
+        // Proceed with fetching other user-specific data here
+      } else {
+        setLoginStatus("Login Failed. Please check your credentials.");
+      }
+    } catch (error) {
+      console.error(error);
+      setLoginStatus("Login Failed. Please try again.");
+    }
+  }
+
   return (
     <div class="flex min-h-screen flex-col justify-center gap-6 text-center dark:bg-neutral-800 dark:text-neutral-200">
-      <h1 class="text-center text-4xl font-semibold text-neutral-50">
-        Quantum
-      </h1>
+      <h1 class="text-center text-4xl font-semibold text-neutral-50">Quantum</h1>
 
-      <div class="flex justify-center">
-        <a
-          href="https://tauri.app"
-          target="_blank"
-          class="drop-shadow-sm hover:drop-shadow-[0_0_32px_#24c8db]  "
-        >
-          <img
-            src="/tauri.svg"
-            class="h-36 p-6 transition-all duration-700 will-change-[filter] hover:drop-shadow-[0_0_32px_#24c8db]"
-            alt="Tauri logo"
-          />
-        </a>
-        <a
-          href="https://solidjs.com"
-          target="_blank"
-          class="hover:text-indigo-600 focus:text-indigo-600"
-        >
-          <img
-            src="/solid.svg"
-            class="h-36 p-6 transition-all duration-700 will-change-[filter] hover:drop-shadow-[0_0_32px_#2f5d90]"
-            alt="Solid logo"
-          />
-        </a>
-      </div>
+      <p class="terxt-3xl p-6 text-neutral-300">Tauri running Solid even on mobile 🤯</p>
 
-      <p class="terxt-3xl p-6 text-neutral-300">
-        Tauri running Solid even on mobile 🤯
-      </p>
-
-      <form
-        class="flex justify-center"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          class="text-md mr-1 rounded-md p-4 placeholder:text-neutral-400 focus:outline focus:outline-1 focus:outline-cyan-400 dark:bg-neutral-900"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button
-          type="submit"
-          class="text-md rounded-md p-4 dark:bg-neutral-900 dark:text-neutral-200"
-        >
-          Greet
-        </button>
-      </form>
-
-      <p>{greetMsg()}</p>
-
-      <button
-        class="text-md rounded-md p-4 bg-neutral-900 text-neutral-200"
-        onClick={() => fetchSchools()}
-      >Hello</button>
-
+      <button class="text-md rounded-md p-4 bg-neutral-900 text-neutral-200" onClick={() => fetchSchools()}>Get School List</button>
       {showDropdown() && (
-        <select>
+        <select onChange={(e) => setSelectedSchoolId(e.currentTarget.value)}> {/* Ensure the selected school ID is updated */}
           {Array.from(schoolList()).map(([key, value]) => (
             <option value={key}>{value}</option>
           ))}
         </select>
       )}
+
+      <input
+        type="text"
+        class="rounded-md p-4 bg-neutral-900 text-neutral-200"
+        placeholder="Username"
+        onInput={(e) => setUsername(e.currentTarget.value)}
+      />
+      <input
+        type="password"
+        class="rounded-md p-4 bg-neutral-900 text-neutral-200"
+        placeholder="Password"
+        onInput={(e) => setPassword(e.currentTarget.value)}
+      />
+
+      <button class="text-md rounded-md p-4 bg-neutral-900 text-neutral-200" onClick={() => login()}>Login</button>
+      <p>{loginStatus()}</p> {/* Display the login status */}
     </div>
   );
 }
