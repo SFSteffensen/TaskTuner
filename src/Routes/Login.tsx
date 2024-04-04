@@ -1,7 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
+import { useStore } from "../store";
 import { createEffect, createSignal, onMount } from 'solid-js';
 
-function App() {
+function Login() {
   const [schoolList, setSchoolList] = createSignal<Map<string, string>>(new Map());
   const [selectedSchoolId, setSelectedSchoolId] = createSignal('');
   const [selectedSchoolName, setSelectedSchoolName] = createSignal('Select School');
@@ -40,6 +41,8 @@ function App() {
     setSchoolList(schoolMap);
   }
 
+  const { setIsLoggedIn, isLoggedIn } = useStore();
+
   async function login() {
     if (!selectedSchoolId() || !username() || !password()) {
       setLoginStatus("Please fill in all fields.");
@@ -61,7 +64,8 @@ function App() {
         console.log("Dashboard Data:", data.dashboard);
         console.log("Schedule Data:", data.schedule);
 
-
+        setIsLoggedIn(true);
+        window.location.href = "/";
 
       } else {
         // Handle error case
@@ -186,4 +190,4 @@ function App() {
   );
 }
 
-export default App;
+export default Login;
