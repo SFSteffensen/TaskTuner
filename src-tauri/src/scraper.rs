@@ -1,3 +1,5 @@
+use chrono::NaiveTime;
+use regex::Regex;
 use reqwest::blocking::get;
 use reqwest::blocking::Client;
 use reqwest::cookie::Jar;
@@ -18,7 +20,7 @@ struct ClassDetails {
     teacher: String,
     room: String,
     description: String,
-    time: String, // TODO: Use a proper date type probably one from chrono crate
+    time: String,
 }
 
 #[tauri::command]
@@ -142,34 +144,51 @@ fn scrape_dashboard(client: &Client, school_id: &str) -> Result<String, Box<dyn 
 
 fn scrape_schedule(client: &Client, school_id: &str) -> Result<String, Box<dyn Error>> {
     let schedule_url = format!("https://www.lectio.dk/lectio/{}/SkemaNy.aspx", school_id);
-    let resp = client.get(&schedule_url).send()?.text()?;
+    let resp = client
+        .get(&schedule_url)
+        .send()
+        .map_err(|e| format!("Failed to send request: {}", e))?
+        .text()
+        .map_err(|e| format!("Failed to get response text: {}", e))?;
+
     let document = Html::parse_document(&resp);
 
-    let selector = Selector::parse(
+    let module_times = parse_module_times(&resp)?;
+
+    let class_selector = Selector::parse(
         "#s_m_Content_Content_SkemaMedNavigation_skemaprintarea .s2skemabrik.s2normal",
     )
-    .unwrap();
+    .expect("Failed to parse class selector");
+    let inner_content_selector =
+        Selector::parse(".s2skemabrikInnerContainer .s2skemabrikcontent.s2normal")
+            .expect("Failed to parse inner content selector");
+    let description_selector = Selector::parse("span[style='word-wrap:break-word;']")
+        .expect("Failed to parse description selector");
 
     let mut classes = Vec::new();
 
-    for class_div in document.select(&selector) {
-        let inner_content_selector =
-            Selector::parse(".s2skemabrikInnerContainer .s2skemabrikcontent.s2normal").unwrap();
+    for class_div in document.select(&class_selector) {
         if let Some(inner_content) = class_div.select(&inner_content_selector).next() {
-            // Extract class details. You may need to adjust the parsing logic based on the actual HTML structure
             let details_text = inner_content.inner_html();
-            let details_parts: Vec<&str> = details_text.split("•").collect();
+            let details_parts: Vec<&str> = details_text.split('•').collect();
+
             if details_parts.len() >= 3 {
-                let class_name = details_parts[0].trim().to_string();
-                let teacher = details_parts[1].trim().to_string();
-                let room = details_parts[2].trim().to_string();
+                let class_name = remove_html_tags(details_parts[0].trim());
+                let teacher = remove_html_tags(details_parts[1].trim());
+                let room = remove_html_tags(details_parts[2].trim());
 
                 let description = inner_content
-                    .select(&Selector::parse("span[style='word-wrap:break-word;']").unwrap())
+                    .select(&description_selector)
                     .next()
-                    .map_or_else(|| "".to_string(), |n| n.text().collect());
+                    .map_or_else(
+                        || "".to_string(),
+                        |n| remove_html_tags(&n.text().collect::<Vec<_>>().join(" ")),
+                    );
 
-                let time = "Placeholder for actual time parsing logic".to_string();
+                // Example of incorporating module times into the class details (this may need adjustment)
+                let time = module_times.get(2).map_or("".to_string(), |(start, end)| {
+                    format!("{} - {}", start.format("%H:%M"), end.format("%H:%M"))
+                });
 
                 classes.push(ClassDetails {
                     class_name,
@@ -182,7 +201,31 @@ fn scrape_schedule(client: &Client, school_id: &str) -> Result<String, Box<dyn E
         }
     }
 
-    let classes_json = serde_json::to_string(&classes)?;
+    serde_json::to_string(&classes).map_err(Into::into)
+}
 
-    Ok(classes_json)
+fn parse_module_times(html_content: &str) -> Result<Vec<(NaiveTime, NaiveTime)>, Box<dyn Error>> {
+    let document = Html::parse_document(html_content);
+    let selector = Selector::parse(".s2module-info > div").unwrap();
+    let mut module_times = Vec::new();
+
+    for element in document.select(&selector) {
+        let content = element.inner_html();
+        let times: Vec<&str> = content.split("<br>").collect();
+        if times.len() > 1 {
+            let time_range: Vec<&str> = times[1].split(" - ").collect();
+            if time_range.len() == 2 {
+                let start_time = NaiveTime::parse_from_str(time_range[0].trim(), "%H:%M")?;
+                let end_time = NaiveTime::parse_from_str(time_range[1].trim(), "%H:%M")?;
+                module_times.push((start_time, end_time));
+            }
+        }
+    }
+
+    Ok(module_times)
+}
+
+fn remove_html_tags(input: &str) -> String {
+    let re = Regex::new(r"(?is)<.*?>").unwrap();
+    re.replace_all(input, "").into_owned()
 }
