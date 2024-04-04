@@ -191,6 +191,7 @@ function App() {
               <th>Room</th>
               <th>Description</th>
               <th>Time</th>
+              <th>Homework</th> {/* New column for homework */}
             </tr>
           </thead>
           <tbody>
@@ -202,12 +203,14 @@ function App() {
                   <td>{classDetail.room}</td>
                   <td>{classDetail.description}</td>
                   <td>{classDetail.time}</td>
+                  <td>{classDetail.homework}</td> {/* Displaying homework data */}
                 </tr>
               )}
             </For>
           </tbody>
         </table>
       </div>
+
 
 
     </div>

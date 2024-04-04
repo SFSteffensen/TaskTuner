@@ -21,6 +21,10 @@ struct ClassDetails {
     room: String,
     description: String,
     time: String,
+    homework: String,
+    resources: String,
+    additional_content: String,
+    notes: String,
 }
 
 #[tauri::command]
@@ -142,7 +146,10 @@ fn scrape_dashboard(client: &Client, school_id: &str) -> Result<String, Box<dyn 
     Ok(scraped_info)
 }
 
-fn scrape_schedule(client: &Client, school_id: &str) -> Result<String, Box<dyn Error>> {
+fn scrape_schedule(
+    client: &reqwest::blocking::Client,
+    school_id: &str,
+) -> Result<String, Box<dyn Error>> {
     let schedule_url = format!("https://www.lectio.dk/lectio/{}/SkemaNy.aspx", school_id);
     let resp = client
         .get(&schedule_url)
@@ -152,77 +159,67 @@ fn scrape_schedule(client: &Client, school_id: &str) -> Result<String, Box<dyn E
         .map_err(|e| format!("Failed to get response text: {}", e))?;
 
     let document = Html::parse_document(&resp);
-
-    let module_times = parse_module_times(&resp)?;
-
     let class_selector = Selector::parse(
         "#s_m_Content_Content_SkemaMedNavigation_skemaprintarea .s2skemabrik.s2normal",
     )
-    .expect("Failed to parse class selector");
-    let inner_content_selector =
-        Selector::parse(".s2skemabrikInnerContainer .s2skemabrikcontent.s2normal")
-            .expect("Failed to parse inner content selector");
-    let description_selector = Selector::parse("span[style='word-wrap:break-word;']")
-        .expect("Failed to parse description selector");
+    .unwrap();
+
+    // Regular expressions for extracting data
+    let time_regex = Regex::new(r"(\d{2}:\d{2}) til (\d{2}:\d{2})").unwrap();
+    let room_regex = Regex::new(r"Lokale(?:r)?: ([^\n]+)").unwrap();
+    let teacher_regex = Regex::new(r"Lærer: ([^\n]+)").unwrap();
+    let homework_regex = Regex::new(r"Lektier:\s*(.+?)(?:\nNote:|\n?$)").unwrap();
+    let additional_content_regex = Regex::new(r"Øvrigt indhold:(.+?)(?:Note:|$)").unwrap();
+    let note_regex = Regex::new(r"Note:(.+)").unwrap();
 
     let mut classes = Vec::new();
 
     for class_div in document.select(&class_selector) {
-        if let Some(inner_content) = class_div.select(&inner_content_selector).next() {
-            let details_text = inner_content.inner_html();
-            let details_parts: Vec<&str> = details_text.split('•').collect();
+        let tooltip = class_div.value().attr("data-tooltip").unwrap_or_default();
 
-            if details_parts.len() >= 3 {
-                let class_name = remove_html_tags(details_parts[0].trim());
-                let teacher = remove_html_tags(details_parts[1].trim());
-                let room = remove_html_tags(details_parts[2].trim());
+        let class_name = class_div
+            .select(&Selector::parse("span[data-lectiocontextcard]").unwrap())
+            .next()
+            .map_or_else(|| "".to_string(), |n| n.inner_html().trim().to_string());
+        let time = time_regex.captures(tooltip).map_or_else(
+            || "Time not found".to_string(),
+            |caps| format!("{} - {}", &caps[1], &caps[2]),
+        );
+        let teacher = teacher_regex.captures(tooltip).map_or_else(
+            || "Teacher not found".to_string(),
+            |caps| caps[1].to_string(),
+        );
+        let room = room_regex
+            .captures(tooltip)
+            .map_or_else(|| "Room not found".to_string(), |caps| caps[1].to_string());
+        let homework = homework_regex
+            .captures(tooltip)
+            .and_then(|caps| caps.get(1))
+            .map_or_else(|| "".to_string(), |m| m.as_str().trim().to_string());
+        let additional_content = additional_content_regex
+            .captures(tooltip)
+            .map_or_else(|| "".to_string(), |caps| caps[1].trim().to_string());
+        let notes = note_regex
+            .captures(tooltip)
+            .map_or_else(|| "".to_string(), |caps| caps[1].trim().to_string());
 
-                let description = inner_content
-                    .select(&description_selector)
-                    .next()
-                    .map_or_else(
-                        || "".to_string(),
-                        |n| remove_html_tags(&n.text().collect::<Vec<_>>().join(" ")),
-                    );
+        // Assuming 'description' comes from another part of your HTML parsing
+        let description = ""; // Placeholder
 
-                // Example of incorporating module times into the class details (this may need adjustment)
-                let time = module_times.get(2).map_or("".to_string(), |(start, end)| {
-                    format!("{} - {}", start.format("%H:%M"), end.format("%H:%M"))
-                });
-
-                classes.push(ClassDetails {
-                    class_name,
-                    teacher,
-                    room,
-                    description,
-                    time,
-                });
-            }
-        }
+        classes.push(ClassDetails {
+            class_name,
+            teacher,
+            room,
+            description: description.to_string(),
+            time,
+            homework,
+            resources: String::new(), // Add logic for resources if applicable
+            additional_content,
+            notes,
+        });
     }
 
     serde_json::to_string(&classes).map_err(Into::into)
-}
-
-fn parse_module_times(html_content: &str) -> Result<Vec<(NaiveTime, NaiveTime)>, Box<dyn Error>> {
-    let document = Html::parse_document(html_content);
-    let selector = Selector::parse(".s2module-info > div").unwrap();
-    let mut module_times = Vec::new();
-
-    for element in document.select(&selector) {
-        let content = element.inner_html();
-        let times: Vec<&str> = content.split("<br>").collect();
-        if times.len() > 1 {
-            let time_range: Vec<&str> = times[1].split(" - ").collect();
-            if time_range.len() == 2 {
-                let start_time = NaiveTime::parse_from_str(time_range[0].trim(), "%H:%M")?;
-                let end_time = NaiveTime::parse_from_str(time_range[1].trim(), "%H:%M")?;
-                module_times.push((start_time, end_time));
-            }
-        }
-    }
-
-    Ok(module_times)
 }
 
 fn remove_html_tags(input: &str) -> String {
