@@ -1,7 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
-import { For, createEffect, createSignal, onMount } from 'solid-js';
+import { useStore } from "../store";
+import { createEffect, createSignal, onMount } from 'solid-js';
 
-function App() {
+function Login() {
   const [schoolList, setSchoolList] = createSignal<Map<string, string>>(new Map());
   const [selectedSchoolId, setSelectedSchoolId] = createSignal('');
   const [selectedSchoolName, setSelectedSchoolName] = createSignal('Select School');
@@ -14,7 +15,6 @@ function App() {
     setSelectedSchoolName(name);
     setDropdownOpen(false);
   };
-  const [scheduleData, setScheduleData] = createSignal<any[]>([]);
   const [searchTerm, setSearchTerm] = createSignal("");
   const handleKeyDown = (e) => {
     // Append the typed character to the search term
@@ -41,6 +41,8 @@ function App() {
     setSchoolList(schoolMap);
   }
 
+  const { setIsLoggedIn, isLoggedIn } = useStore();
+
   async function login() {
     if (!selectedSchoolId() || !username() || !password()) {
       setLoginStatus("Please fill in all fields.");
@@ -52,19 +54,22 @@ function App() {
         username: username(),
         password: password(),
       });
-      const responseData = JSON.parse(response); // assuming response is a JSON string
+      const data = JSON.parse(response);
 
-      if (responseData.status === "success") {
-        // Assuming responseData.schedule holds the schedule JSON string
-        const scheduleJson = JSON.parse(responseData.schedule); // parse the JSON string into an object
-        setScheduleData(scheduleJson); // update the state
-
-        console.log("Schedule Data:", scheduleJson); // logging the parsed JSON
-
+      if (data.status === "success") {
         setLoginStatus("Login Successful!");
+
+        // Assuming you want to do something with the dashboard and schedule data
+        // For example, log them to the console or store them in state for rendering
+        console.log("Dashboard Data:", data.dashboard);
+        console.log("Schedule Data:", data.schedule);
+
+        setIsLoggedIn(true);
+        window.location.href = "/";
+
       } else {
         // Handle error case
-        setLoginStatus(responseData.message || "Login failed. Please try again.");
+        setLoginStatus(data.message || "Login failed. Please try again.");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -181,42 +186,8 @@ function App() {
           </div>}
         </form>
       </div>
-
-      <div>
-        <table>
-          <thead>
-            <tr>
-              <th>Status</th>
-              <th>Class Name</th>
-              <th>Teacher</th>
-              <th>Room</th>
-              <th>Description</th>
-              <th>Time</th>
-              <th>Homework</th>
-            </tr>
-          </thead>
-          <tbody>
-            <For each={scheduleData()}>
-              {(classDetail) => (
-                <tr>
-                  <td>{classDetail.status}</td>
-                  <td>{classDetail.class_name}</td>
-                  <td>{classDetail.teacher}</td>
-                  <td>{classDetail.room}</td>
-                  <td>{classDetail.description}</td>
-                  <td>{classDetail.time}</td>
-                  <td>{classDetail.homework}</td> {/* Displaying homework data */}
-                </tr>
-              )}
-            </For>
-          </tbody>
-        </table>
-      </div>
-
-
-
     </div>
   );
 }
 
-export default App;
+export default Login;

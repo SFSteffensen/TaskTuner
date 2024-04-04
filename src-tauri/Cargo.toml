@@ -1,7 +1,7 @@
 [package]
 name = "schooldayplanner"
 version = "0.0.0"
-description = "App for planning your school day"
+description = "DashBoard for planning your school day"
 authors = ["Mikkel M.H. Pedersen & Sebastian F. Stffensen"]
 license = ""
 repository = ""
