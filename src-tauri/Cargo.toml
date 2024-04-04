@@ -25,6 +25,8 @@ reqwest = { version = "0.11.23", features = ["blocking", "json", "cookies"] }
 select = "0.6.0"
 tauri-plugin-fs = "2.0.0-alpha"
 scraper = "0.13.0"
+chrono = "0.4.37"
+regex = "1.10.4"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
