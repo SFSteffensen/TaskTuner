@@ -68,8 +68,8 @@ function Login() {
 
         // Assuming you want to do something with the dashboard and schedule data
         // For example, log them to the console or store them in state for rendering
-        console.log("Dashboard Data:", data.dashboard);
-        console.log("Schedule Data:", data.schedule);
+        console.log("Dashboard Data:", responseData.dashboard);
+        console.log("Schedule Data:", responseData.schedule);
 
         setIsLoggedIn(true);
         window.location.href = "/";
@@ -193,37 +193,6 @@ function Login() {
           </div>}
         </form>
       </div>
-
-      <div>
-        <table>
-          <thead>
-            <tr>
-              <th>Class Name</th>
-              <th>Teacher</th>
-              <th>Room</th>
-              <th>Description</th>
-              <th>Time</th>
-              <th>Homework</th> {/* New column for homework */}
-            </tr>
-          </thead>
-          <tbody>
-            <For each={scheduleData()}>
-              {(classDetail) => (
-                <tr>
-                  <td>{classDetail.class_name}</td>
-                  <td>{classDetail.teacher}</td>
-                  <td>{classDetail.room}</td>
-                  <td>{classDetail.description}</td>
-                  <td>{classDetail.time}</td>
-                  <td>{classDetail.homework}</td> {/* Displaying homework data */}
-                </tr>
-              )}
-            </For>
-          </tbody>
-        </table>
-      </div>
-
-
 
     </div>
   );

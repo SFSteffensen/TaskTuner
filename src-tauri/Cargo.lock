@@ -3,6 +3,23 @@
 version = 3
 
 [[package]]
+name = "TaskTuner"
+version = "0.0.0"
+dependencies = [
+ "chrono",
+ "regex",
+ "reqwest",
+ "scraper",
+ "select",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-fs",
+ "tauri-plugin-shell",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3032,23 +3049,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fbc91545643bcf3a0bbb6569265615222618bdf33ce4ffbbd13c4bbd4c093534"
 dependencies = [
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "schooldayplanner"
-version = "0.0.0"
-dependencies = [
- "chrono",
- "regex",
- "reqwest",
- "scraper",
- "select",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-fs",
- "tauri-plugin-shell",
 ]
 
 [[package]]
