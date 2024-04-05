@@ -1,5 +1,5 @@
 [package]
-name = "schooldayplanner"
+name = "TaskTuner"
 version = "0.0.0"
 description = "DashBoard for planning your school day"
 authors = ["Mikkel M.H. Pedersen & Sebastian F. Stffensen"]
