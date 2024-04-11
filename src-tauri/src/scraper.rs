@@ -151,24 +151,15 @@ fn scrape_schedule(
     school_id: &str,
 ) -> Result<String, Box<dyn Error>> {
     let schedule_url = format!("https://www.lectio.dk/lectio/{}/SkemaNy.aspx", school_id);
-    let resp = client
-        .get(&schedule_url)
-        .send()
-        .map_err(|e| format!("Failed to send request: {}", e))?
-        .text()
-        .map_err(|e| format!("Failed to get response text: {}", e))?;
+    let resp = client.get(&schedule_url).send()?;
+    let document = Html::parse_document(&resp.text()?);
 
-    let document = Html::parse_document(&resp);
-    let class_selector = Selector::parse(
-        "#s_m_Content_Content_SkemaMedNavigation_skemaprintarea .s2skemabrik.s2normal",
-    )
-    .unwrap();
+    // Assuming each class block is within a 'div.s2skemabrikcontainer'
+    let class_selector = Selector::parse("div.s2skemabrikcontainer a.s2skemabrik").unwrap();
 
-    // Regular expressions for extracting data
     let time_regex = Regex::new(r"(\d{2}:\d{2}) til (\d{2}:\d{2})").unwrap();
     let room_regex = Regex::new(r"Lokale(?:r)?: ([^\n]+)").unwrap();
     let teacher_regex = Regex::new(r"Lærer: ([^\n]+)").unwrap();
-    let homework_regex = Regex::new(r"Lektier:\s*(.+?)(?:\nNote:|\n?$)").unwrap();
     let additional_content_regex = Regex::new(r"Øvrigt indhold:(.+?)(?:Note:|$)").unwrap();
     let note_regex = Regex::new(r"Note:(.+)").unwrap();
 
@@ -176,7 +167,9 @@ fn scrape_schedule(
 
     for class_div in document.select(&class_selector) {
         let tooltip = class_div.value().attr("data-tooltip").unwrap_or_default();
+        let detail_link = class_div.value().attr("href");
 
+        // Basic details from the tooltip
         let class_name = class_div
             .select(&Selector::parse("span[data-lectiocontextcard]").unwrap())
             .next()
@@ -192,10 +185,6 @@ fn scrape_schedule(
         let room = room_regex
             .captures(tooltip)
             .map_or_else(|| "Room not found".to_string(), |caps| caps[1].to_string());
-        let homework = homework_regex
-            .captures(tooltip)
-            .and_then(|caps| caps.get(1))
-            .map_or_else(|| "".to_string(), |m| m.as_str().trim().to_string());
         let additional_content = additional_content_regex
             .captures(tooltip)
             .map_or_else(|| "".to_string(), |caps| caps[1].trim().to_string());
@@ -203,26 +192,42 @@ fn scrape_schedule(
             .captures(tooltip)
             .map_or_else(|| "".to_string(), |caps| caps[1].trim().to_string());
 
-        // Assuming 'description' comes from another part of your HTML parsing
-        let description = ""; // Placeholder
+        let mut detailed_homework = String::new();
+
+        if let Some(url) = detail_link {
+            let full_url = format!("https://www.lectio.dk{}", url);
+            println!("Fetching detailed page: {}", full_url);
+            let detail_response = client.get(full_url).send()?;
+            if detail_response.status().is_success() {
+                let detail_document = Html::parse_document(&detail_response.text()?);
+                let homework_selector =
+                    Selector::parse("div#s_m_Content_Content_tocAndToolbar_inlineHomeworkDiv")
+                        .unwrap();
+                detailed_homework = detail_document
+                    .select(&homework_selector)
+                    .next()
+                    .map(|div| div.text().collect::<Vec<_>>().join(" "))
+                    .unwrap_or_else(|| "No detailed homework provided".to_string());
+            } else {
+                println!(
+                    "Failed to fetch detailed page, status: {}",
+                    detail_response.status()
+                );
+            }
+        }
 
         classes.push(ClassDetails {
             class_name,
             teacher,
             room,
-            description: description.to_string(),
+            description: "".to_string(), // This could be filled if needed
             time,
-            homework,
-            resources: String::new(), // Add logic for resources if applicable
+            homework: detailed_homework, // Updated to use detailed homework
+            resources: String::new(),    // Extract if available
             additional_content,
             notes,
         });
     }
 
     serde_json::to_string(&classes).map_err(Into::into)
-}
-
-fn remove_html_tags(input: &str) -> String {
-    let re = Regex::new(r"(?is)<.*?>").unwrap();
-    re.replace_all(input, "").into_owned()
 }
