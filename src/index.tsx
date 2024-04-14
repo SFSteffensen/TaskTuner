@@ -11,21 +11,23 @@ import NotFound from "./Routes/404.tsx";
 
 // Components
 import Nav from "./Components/Nav.tsx";
+import Schedule from "./Routes/Schedule.tsx";
 
 
 const App = (props) => {
-    return <>
-        <Nav />
-        {props.children}
-    </>
+  return <>
+    <Nav />
+    {props.children}
+  </>
 }
 
 
 
 render(() => (
   <Router root={App}>
-    <Route path={"/"} component={() => <DashBoard  />} />
-    <Route path={"/login"} component={() => <Login  />} />
+    <Route path={"/"} component={() => <DashBoard />} />
+    <Route path={"/schedule"} component={() => <Schedule />} />
+    <Route path={"/login"} component={() => <Login />} />
     <Route path={"*404"} component={NotFound} />
   </Router>
 ), document.getElementById("root") as HTMLElement);
