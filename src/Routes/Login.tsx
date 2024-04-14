@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { useStore } from "../store";
-import {For ,createEffect, createSignal, onMount } from 'solid-js';
+import { For, createEffect, createSignal, onMount } from 'solid-js';
 
 function Login() {
   const [schoolList, setSchoolList] = createSignal<Map<string, string>>(new Map());
@@ -12,6 +12,7 @@ function Login() {
   const [password, setPassword] = createSignal('');
   const selectSchool = (id: string, name: string) => {
     setSelectedSchoolId(id);
+    localStorage.setItem('selectedSchoolId', id);
     setSelectedSchoolName(name);
     setDropdownOpen(false);
   };
@@ -58,18 +59,8 @@ function Login() {
       const responseData = JSON.parse(response); // assuming response is a JSON string
 
       if (responseData.status === "success") {
-        // Assuming responseData.schedule holds the schedule JSON string
-        const scheduleJson = JSON.parse(responseData.schedule); // parse the JSON string into an object
-        setScheduleData(scheduleJson); // update the state
-
-        console.log("Schedule Data:", scheduleJson); // logging the parsed JSON
 
         setLoginStatus("Login Successful!");
-
-        // Assuming you want to do something with the dashboard and schedule data
-        // For example, log them to the console or store them in state for rendering
-        console.log("Dashboard Data:", responseData.dashboard);
-        console.log("Schedule Data:", responseData.schedule);
 
         setIsLoggedIn(true);
         window.location.href = "/";
