@@ -1,15 +1,29 @@
-import { createSignal } from "solid-js";
 import { render } from "solid-js/web";
 import { Router, Route } from "@solidjs/router";
 
+
 import "./styles.css";
+
+// Routes
 import Login from "./Routes/Login.tsx";
 import DashBoard from "./Routes/DashBoard.tsx";
 import NotFound from "./Routes/404.tsx";
 
+// Components
+import Nav from "./Components/Nav.tsx";
+
+
+const App = (props) => {
+    return <>
+        <Nav />
+        {props.children}
+    </>
+}
+
+
 
 render(() => (
-  <Router>
+  <Router root={App}>
     <Route path={"/"} component={() => <DashBoard  />} />
     <Route path={"/login"} component={() => <Login  />} />
     <Route path={"*404"} component={NotFound} />
