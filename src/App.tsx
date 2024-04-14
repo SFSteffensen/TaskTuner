@@ -186,18 +186,20 @@ function App() {
         <table>
           <thead>
             <tr>
+              <th>Status</th>
               <th>Class Name</th>
               <th>Teacher</th>
               <th>Room</th>
               <th>Description</th>
               <th>Time</th>
-              <th>Homework</th> {/* New column for homework */}
+              <th>Homework</th>
             </tr>
           </thead>
           <tbody>
             <For each={scheduleData()}>
               {(classDetail) => (
                 <tr>
+                  <td>{classDetail.status}</td>
                   <td>{classDetail.class_name}</td>
                   <td>{classDetail.teacher}</td>
                   <td>{classDetail.room}</td>

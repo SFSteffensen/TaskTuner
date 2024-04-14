@@ -16,14 +16,15 @@ use std::sync::Arc;
 
 #[derive(Serialize, Deserialize)]
 struct ClassDetails {
+    // TODO: add Status field
+    status: String,
     class_name: String,
     teacher: String,
     room: String,
-    description: String,
+    description: String, // "Øvright indhold" in lectio
     time: String,
     homework: String,
     resources: String,
-    additional_content: String,
     notes: String,
 }
 
@@ -157,10 +158,12 @@ fn scrape_schedule(
     // Assuming each class block is within a 'div.s2skemabrikcontainer'
     let class_selector = Selector::parse("div.s2skemabrikcontainer a.s2skemabrik").unwrap();
 
+    let status_regex = Regex::new(r"(Ændret!|Aflyst!)").unwrap();
     let time_regex = Regex::new(r"(\d{2}:\d{2}) til (\d{2}:\d{2})").unwrap();
     let room_regex = Regex::new(r"Lokale(?:r)?: ([^\n]+)").unwrap();
+    let description_regex = Regex::new(r"Øvrigt indhold:(.+?)(?:Note:|$)").unwrap();
+    let ressource_regex = Regex::new(r"Resource: (.+)").unwrap();
     let teacher_regex = Regex::new(r"Lærer: ([^\n]+)").unwrap();
-    let additional_content_regex = Regex::new(r"Øvrigt indhold:(.+?)(?:Note:|$)").unwrap();
     let note_regex = Regex::new(r"Note:(.+)").unwrap();
 
     let mut classes = Vec::new();
@@ -170,6 +173,9 @@ fn scrape_schedule(
         let detail_link = class_div.value().attr("href");
 
         // Basic details from the tooltip
+        let status = status_regex
+            .captures(tooltip)
+            .map_or("normal".to_string(), |caps| caps[0].to_string());
         let class_name = class_div
             .select(&Selector::parse("span[data-lectiocontextcard]").unwrap())
             .next()
@@ -178,6 +184,13 @@ fn scrape_schedule(
             || "Time not found".to_string(),
             |caps| format!("{} - {}", &caps[1], &caps[2]),
         );
+        let description = description_regex
+            .captures(tooltip)
+            .and_then(|caps| caps.get(1))
+            .map_or(String::new(), |m| m.as_str().trim().to_string());
+        let ressource = ressource_regex
+            .captures(tooltip)
+            .map_or_else(|| "".to_string(), |caps| caps[1].trim().to_string());
         let teacher = teacher_regex.captures(tooltip).map_or_else(
             || "Teacher not found".to_string(),
             |caps| caps[1].to_string(),
@@ -185,9 +198,6 @@ fn scrape_schedule(
         let room = room_regex
             .captures(tooltip)
             .map_or_else(|| "Room not found".to_string(), |caps| caps[1].to_string());
-        let additional_content = additional_content_regex
-            .captures(tooltip)
-            .map_or_else(|| "".to_string(), |caps| caps[1].trim().to_string());
         let notes = note_regex
             .captures(tooltip)
             .map_or_else(|| "".to_string(), |caps| caps[1].trim().to_string());
@@ -217,14 +227,14 @@ fn scrape_schedule(
         }
 
         classes.push(ClassDetails {
+            status,
             class_name,
             teacher,
             room,
-            description: "".to_string(), // This could be filled if needed
+            description,
             time,
-            homework: detailed_homework, // Updated to use detailed homework
-            resources: String::new(),    // Extract if available
-            additional_content,
+            homework: detailed_homework,
+            resources: ressource,
             notes,
         });
     }
