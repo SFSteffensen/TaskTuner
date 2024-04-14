@@ -1,4 +1,3 @@
-use chrono::NaiveTime;
 use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::blocking::get;
@@ -50,6 +49,7 @@ struct ClassDetails {
     room: String,
     description: String, // "Øvright indhold" in lectio
     time: String,
+    day: String,
     homework: String,
     resources: String,
     notes: String,
@@ -187,12 +187,12 @@ fn scrape_schedule(school_id: &str) -> Result<String, Box<dyn Error>> {
         let resp = client.get(&schedule_url).send()?;
         let document = Html::parse_document(&resp.text()?);
 
-        // Assuming each class block is within a 'div.s2skemabrikcontainer'
         let class_selector = Selector::parse("div.s2skemabrikcontainer a.s2skemabrik").unwrap();
 
         let status_regex = Regex::new(r"(Ændret!|Aflyst!)").unwrap();
         let time_regex = Regex::new(r"(\d{2}:\d{2}) til (\d{2}:\d{2})").unwrap();
         let room_regex = Regex::new(r"Lokale(?:r)?: ([^\n]+)").unwrap();
+        let day_regex = Regex::new(r"^\s*(ma|ti|on|to|fr)").unwrap();
         let description_regex = Regex::new(r"Øvrigt indhold:(.+?)(?:Note:|$)").unwrap();
         let ressource_regex = Regex::new(r"Resource: (.+)").unwrap();
         let teacher_regex = Regex::new(r"Lærer: ([^\n]+)").unwrap();
@@ -216,6 +216,9 @@ fn scrape_schedule(school_id: &str) -> Result<String, Box<dyn Error>> {
                 || "Time not found".to_string(),
                 |caps| format!("{} - {}", &caps[1], &caps[2]),
             );
+
+            let mut day = "Day not found".to_string();
+            let mut detailed_homework = String::new();
             let description = description_regex
                 .captures(tooltip)
                 .and_then(|caps| caps.get(1))
@@ -234,8 +237,6 @@ fn scrape_schedule(school_id: &str) -> Result<String, Box<dyn Error>> {
                 .captures(tooltip)
                 .map_or_else(|| "".to_string(), |caps| caps[1].trim().to_string());
 
-            let mut detailed_homework = String::new();
-
             if let Some(url) = detail_link {
                 let full_url = format!("https://www.lectio.dk{}", url);
                 println!("Fetching detailed page: {}", full_url);
@@ -250,6 +251,16 @@ fn scrape_schedule(school_id: &str) -> Result<String, Box<dyn Error>> {
                         .next()
                         .map(|div| div.text().collect::<Vec<_>>().join(" "))
                         .unwrap_or_else(|| "No detailed homework provided".to_string());
+
+                    // Extract day from the detail page
+                    let day_info = detail_document
+                        .select(&Selector::parse("div.s2skemabrikcontent").unwrap())
+                        .next();
+                    if let Some(element) = day_info {
+                        day = day_regex
+                            .find(&element.inner_html())
+                            .map_or("Day not found".to_string(), |m| m.as_str().to_string());
+                    }
                 } else {
                     println!(
                         "Failed to fetch detailed page, status: {}",
@@ -268,6 +279,7 @@ fn scrape_schedule(school_id: &str) -> Result<String, Box<dyn Error>> {
                 homework: detailed_homework,
                 resources: ressource,
                 notes,
+                day,
             });
         }
         serde_json::to_string(&classes).map_err(Into::into)
