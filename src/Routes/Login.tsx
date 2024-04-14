@@ -1,7 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
-import { For, createEffect, createSignal, onMount } from 'solid-js';
+import { useStore } from "../store";
+import {For ,createEffect, createSignal, onMount } from 'solid-js';
 
-function App() {
+function Login() {
   const [schoolList, setSchoolList] = createSignal<Map<string, string>>(new Map());
   const [selectedSchoolId, setSelectedSchoolId] = createSignal('');
   const [selectedSchoolName, setSelectedSchoolName] = createSignal('Select School');
@@ -41,6 +42,8 @@ function App() {
     setSchoolList(schoolMap);
   }
 
+  const { setIsLoggedIn, isLoggedIn } = useStore();
+
   async function login() {
     if (!selectedSchoolId() || !username() || !password()) {
       setLoginStatus("Please fill in all fields.");
@@ -62,6 +65,15 @@ function App() {
         console.log("Schedule Data:", scheduleJson); // logging the parsed JSON
 
         setLoginStatus("Login Successful!");
+
+        // Assuming you want to do something with the dashboard and schedule data
+        // For example, log them to the console or store them in state for rendering
+        console.log("Dashboard Data:", responseData.dashboard);
+        console.log("Schedule Data:", responseData.schedule);
+
+        setIsLoggedIn(true);
+        window.location.href = "/";
+
       } else {
         // Handle error case
         setLoginStatus(responseData.message || "Login failed. Please try again.");
@@ -182,41 +194,8 @@ function App() {
         </form>
       </div>
 
-      <div>
-        <table>
-          <thead>
-            <tr>
-              <th>Status</th>
-              <th>Class Name</th>
-              <th>Teacher</th>
-              <th>Room</th>
-              <th>Description</th>
-              <th>Time</th>
-              <th>Homework</th>
-            </tr>
-          </thead>
-          <tbody>
-            <For each={scheduleData()}>
-              {(classDetail) => (
-                <tr>
-                  <td>{classDetail.status}</td>
-                  <td>{classDetail.class_name}</td>
-                  <td>{classDetail.teacher}</td>
-                  <td>{classDetail.room}</td>
-                  <td>{classDetail.description}</td>
-                  <td>{classDetail.time}</td>
-                  <td>{classDetail.homework}</td> {/* Displaying homework data */}
-                </tr>
-              )}
-            </For>
-          </tbody>
-        </table>
-      </div>
-
-
-
     </div>
   );
 }
 
-export default App;
+export default Login;
