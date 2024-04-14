@@ -27,6 +27,8 @@ tauri-plugin-fs = "2.0.0-alpha"
 scraper = "0.13.0"
 chrono = "0.4.37"
 regex = "1.10.4"
+lazy_static = "1.4.0"
+anyhow = "1.0.82"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
