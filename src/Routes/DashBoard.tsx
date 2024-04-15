@@ -2,11 +2,13 @@ import { createSignal, onMount } from 'solid-js';
 import { useLocation } from "@solidjs/router";
 import { useStore } from "../store";
 import { invoke } from '@tauri-apps/api/core';
+import useTheme from '../hooks/useTheme';
 
 function DashBoard() {
   const { isLoggedIn } = useStore();
   const { pathname } = useLocation();
   const [dashboardData, setDashboardData] = createSignal('');
+  const [theme, setTheme] = useTheme(); // Use the theme from the useTheme hook
 
   if (!isLoggedIn()) {
     console.log("User not logged in. Redirecting to login page.");
@@ -52,6 +54,7 @@ function DashBoard() {
 
   onMount(() => {
     if (isLoggedIn()) {
+      document.documentElement.setAttribute('data-theme', theme());
       fetchDashboard();
     }
   });
@@ -62,12 +65,10 @@ function DashBoard() {
     <div>
       <div class="p-4">
         <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
-        <div class="bg-secondary p-4 rounded shadow">
+        <div class="bg-base-200 p-4 rounded-xl shadow">
           <div innerHTML={dashboardData()} />
         </div>
       </div>
-      <a href="/Schedule" class="fixed bottom-4 right-4 bg-primary text-white p-4 rounded-full shadow-lg">
-      </a>
     </div>
   );
 }

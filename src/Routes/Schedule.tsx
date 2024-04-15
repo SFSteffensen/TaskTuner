@@ -2,11 +2,13 @@ import { createSignal, onMount } from 'solid-js';
 import { useLocation } from "@solidjs/router";
 import { useStore } from "../store";
 import { invoke } from '@tauri-apps/api/core';
+import useTheme from '../hooks/useTheme';  // Import the useTheme hook
 
 function Schedule() {
   const { isLoggedIn } = useStore();
   const { pathname } = useLocation();
   const [scheduleData, setScheduleData] = createSignal({});
+  const [theme] = useTheme(); // Use theme from the useTheme hook
   const days = ['ma', 'ti', 'on', 'to', 'fr']; // Danish abbreviations for the days of the week
 
   if (!isLoggedIn()) {
@@ -41,6 +43,7 @@ function Schedule() {
 
   onMount(() => {
     if (isLoggedIn()) {
+      document.documentElement.setAttribute('data-theme', theme());
       fetchSchedule();
     }
   });
@@ -75,7 +78,7 @@ function Schedule() {
                         </div>
                       </div>
                     ) : (
-                      <div class="card bg-base-100 shadow-xl">
+                      <div class="card bg-base-300 shadow-xl">
                         <div class="card-body p-2 text-center">
                           <p class="text-xs"> </p>
                           <h2 class="text-sm font-bold">Ingen Lektion</h2>

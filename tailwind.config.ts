@@ -35,6 +35,7 @@ export default {
       "nord",
       "black",
       "lofi",
+      "retro",
       "night",
       "cyberpunk",
       "aqua",
