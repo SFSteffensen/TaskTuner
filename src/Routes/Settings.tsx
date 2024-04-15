@@ -7,6 +7,8 @@ function Settings() {
   const { isLoggedIn } = useStore();
   const [theme, setTheme] = createSignal(localStorage.getItem('theme') || 'light');
   const [absenceData, setAbsenceData] = createSignal({});
+  const schoolId = localStorage.getItem('selectedSchoolId') || '';
+
 
   const changeTheme = (newTheme) => {
     setTheme(newTheme); // Update the local state
@@ -16,7 +18,7 @@ function Settings() {
 
   async function fetchAbsence() {
     try {
-      const response = await invoke('get_absence', { schoolId: '165' }); // Update with correct school_id
+      const response = await invoke('get_absence', { schoolId: schoolId });
       setAbsenceData(JSON.parse(response));
       console.log('Absence data fetched:', JSON.parse(response));
     } catch (error) {
