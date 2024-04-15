@@ -15,6 +15,8 @@ function DashBoard() {
     window.location.href = "/login?redirect=" + pathname;
   }
 
+  //TODO: write the schedule to a json file and read it from the dashboard instead of fetching it every time the dashboard is loaded, but how do we make sure the data is up to date?
+
   function linkify(inputText) {
     let replacedText;
 
