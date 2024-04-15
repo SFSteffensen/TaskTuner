@@ -1,6 +1,6 @@
 mod scraper;
 
-use scraper::{get_dashboard, get_schedule, get_schools, login};
+use scraper::{get_absence, get_assignments, get_dashboard, get_schedule, get_schools, login};
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -17,7 +17,9 @@ pub fn run() {
             get_schools,
             login,
             get_schedule,
-            get_dashboard
+            get_dashboard,
+            get_absence,
+            get_assignments
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
