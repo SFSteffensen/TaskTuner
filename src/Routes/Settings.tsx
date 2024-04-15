@@ -1,50 +1,81 @@
-import { onMount } from 'solid-js';
-import { useLocation } from "@solidjs/router";
+import { createSignal, onMount } from 'solid-js';
 import { useStore } from "../store";
 import useTheme from '../hooks/useTheme';
 
 function Settings() {
   const { isLoggedIn } = useStore();
-  const { pathname } = useLocation();
-  const [theme, changeTheme] = useTheme(); // Utilizing the custom hook for theme management
+  const [theme, setTheme] = createSignal(localStorage.getItem('theme') || 'light');
 
-  if (!isLoggedIn()) {
-    console.log("User not logged in. Redirecting to login page.");
-    window.location.href = "/login?redirect=" + pathname;
-  }
+  const changeTheme = (newTheme) => {
+    setTheme(newTheme); // Update the local state
+    localStorage.setItem('theme', newTheme); // Save the new theme to localStorage
+    document.documentElement.setAttribute('data-theme', newTheme); // Apply the theme
+  };
 
   onMount(() => {
     if (isLoggedIn()) {
-      console.log("User is logged in.");
+      document.documentElement.setAttribute('data-theme', theme()); // Apply saved theme on load
     }
-    console.log("page: {} loaded", pathname);
   });
 
   return (
-    <div>
-      <div class="overflow-x-auto p-4">
-        <h1 class="text-2xl font-bold">Settings</h1>
-        <h2>Tema:</h2>
-        <div class="dropdown mb-72">
-          <div tabindex="0" role="button" class="btn m-1">
-            Theme
-            <svg width="12px" height="12px" class="h-2 w-2 fill-current opacity-60 inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048"><path d="M1799 349l242 241-1017 1017L7 590l242-241 775 775 775-775z"></path></svg>
+    <div class="overflow-x-auto p-4">
+      <h1 class="text-2xl font-bold">Mere</h1>
+      <div class="join join-vertical w-full">
+        <div class="collapse collapse-arrow join-item border border-base-300">
+          <input type="radio" name="my-accordion-1" />
+          <div class="collapse-title text-xl font-medium">
+            Fravær
           </div>
-          <ul tabindex="0" class="dropdown-content z-[1] p-2 shadow-2xl bg-base-300 rounded-box w-52">
-            {['light', 'dark', 'nord', 'retro', 'black', 'lofi', 'night', 'cyberpunk', 'aqua', 'valentine', 'pastel'].map(t => (
-              <li key={t}>
-                <input
-                  type="radio"
-                  name="theme-dropdown"
-                  class="theme-controller btn btn-sm btn-block btn-ghost justify-start"
-                  aria-label={t.charAt(0).toUpperCase() + t.slice(1)}
-                  value={t}
-                  checked={theme() === t}
-                  onChange={(e) => changeTheme(e.currentTarget.value)}
-                />
-              </li>
-            ))}
-          </ul>
+          <div class="collapse-content">
+            <p>Fravær kommer senere</p>
+          </div>
+        </div>
+
+        <div class="collapse collapse-arrow join-item border border-base-300">
+          <input type="radio" name="my-accordion-1" />
+          <div class="collapse-title text-xl font-medium">
+            Dokumenter
+          </div>
+          <div class="collapse-content">
+            <p>Dokumenter kommer senere</p>
+          </div>
+        </div>
+
+        <div class="collapse collapse-arrow join-item border border-base-300">
+          <input type="radio" name="my-accordion-1" />
+          <div class="collapse-title text-xl font-medium">
+            Karakterer
+          </div>
+          <div class="collapse-content">
+            <p>Karaktere kommer senere</p>
+          </div>
+        </div>
+
+        <div class="collapse collapse-arrow join-item border border-base-300">
+          <input type="radio" name="my-accordion-1" />
+          <div class="collapse-title text-xl font-medium">
+            Tema
+          </div>
+          <div class="collapse-content">
+            <div>
+              {['light', 'dark', 'nord', 'retro', 'black', 'lofi', 'night', 'cyberpunk', 'aqua', 'valentine', 'pastel'].map(t => (
+                <div class="form-control">
+                  <label class="label cursor-pointer gap-4">
+                    <span class="label-text">{t.charAt(0).toUpperCase() + t.slice(1)}</span>
+                    <input
+                      type="radio"
+                      name="theme-radios"
+                      class="radio theme-controller"
+                      value={t}
+                      checked={theme() === t}
+                      onChange={(e) => changeTheme(e.currentTarget.value)}
+                    />
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
