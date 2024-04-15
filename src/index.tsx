@@ -13,6 +13,8 @@ import NotFound from "./Routes/404.tsx";
 import Nav from "./Components/Nav.tsx";
 import Schedule from "./Routes/Schedule.tsx";
 import Settings from "./Routes/Settings.tsx";
+import DM from "./Routes/DM.tsx";
+import Assignment from "./Routes/Assignments.tsx";
 
 
 const App = (props) => {
@@ -30,6 +32,8 @@ render(() => (
     <Route path={"/schedule"} component={() => <Schedule />} />
     <Route path={"/login"} component={() => <Login />} />
     <Route path={"/settings"} component={() => <Settings />} />
+    <Route path={"/dm"} component={DM} />
+    <Route path={"/assignment"} component={Assignment} />
     <Route path={"*404"} component={NotFound} />
   </Router>
 ), document.getElementById("root") as HTMLElement);
