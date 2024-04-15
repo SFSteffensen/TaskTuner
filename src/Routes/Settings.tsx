@@ -17,6 +17,7 @@ function Settings() {
     if (isLoggedIn()) {
       console.log("User is logged in.");
     }
+    console.log("page: {} loaded", pathname);
   });
 
   return (
