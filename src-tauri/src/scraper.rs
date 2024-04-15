@@ -3,6 +3,7 @@ use regex::Regex;
 use reqwest::blocking::get;
 use reqwest::blocking::Client;
 use reqwest::cookie::Jar;
+use reqwest::header::CONTENT_TYPE;
 use reqwest::Url;
 use scraper::{Html, Selector};
 use select::document::Document;
@@ -53,6 +54,44 @@ struct ClassDetails {
     homework: String,
     resources: String,
     notes: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct AbsenceData {
+    team: String,
+    opgjort: AbsenceDetail,
+    for_the_year: AbsenceDetail,
+    writing: Option<WritingDetail>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct AbsenceDetail {
+    procent: String,
+    moduler: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct WritingDetail {
+    opgjort: AbsenceDetail,
+    for_the_year_wrting: AbsenceDetail,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Assignment {
+    title: String,
+    description: String,
+    due_date: String,
+    responsible: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Message {
+    topic: String,
+    sender: String,
+    date: String,
+    time: String,
+    receivers: String,
+    message: String,
 }
 
 #[tauri::command]
@@ -292,6 +331,145 @@ fn scrape_schedule(school_id: &str) -> Result<String, Box<dyn Error>> {
 pub fn get_schedule(school_id: &str) -> String {
     match scrape_schedule(&school_id) {
         Ok(schedule) => schedule,
+        Err(e) => format!("Error: {}", e),
+    }
+}
+
+// Function to scrape absence
+fn scrape_absence(
+    school_id: &str,
+) -> Result<HashMap<String, AbsenceData>, Box<dyn std::error::Error>> {
+    let client = CLIENT_MANAGER
+        .get_client()
+        .ok_or("Client not initialized")?;
+    let url = format!(
+        "https://www.lectio.dk/lectio/{}/subnav/fravaerelev.aspx",
+        school_id
+    );
+    let res = client.get(&url).send()?;
+    if res.status() != 200 {
+        return Err("Failed to fetch absence data".into());
+    }
+
+    let body = res.text()?;
+    let document = Html::parse_document(&body);
+    let selector =
+        Selector::parse("table#s_m_Content_Content_SFTabStudentAbsenceDataTable").unwrap();
+    let table = document
+        .select(&selector)
+        .next()
+        .ok_or("Absence table not found")?;
+
+    let mut results = HashMap::new();
+    for row in table.select(&Selector::parse("tr").unwrap()) {
+        let columns: Vec<_> = row.select(&Selector::parse("td").unwrap()).collect();
+        if columns.len() >= 9 {
+            let team = columns[0].text().collect::<String>();
+            results.insert(
+                team.clone(),
+                AbsenceData {
+                    team,
+                    opgjort: AbsenceDetail {
+                        procent: columns[1].text().collect(),
+                        moduler: columns[2].text().collect(),
+                    },
+                    for_the_year: AbsenceDetail {
+                        procent: columns[3].text().collect(),
+                        moduler: columns[4].text().collect(),
+                    },
+                    writing: Some(WritingDetail {
+                        opgjort: AbsenceDetail {
+                            procent: columns[5].text().collect(),
+                            moduler: columns[6].text().collect(),
+                        },
+                        for_the_year_wrting: AbsenceDetail {
+                            procent: columns[7].text().collect(),
+                            moduler: columns[8].text().collect(),
+                        },
+                    }),
+                },
+            );
+        }
+    }
+
+    Ok(results)
+}
+
+// Tauri command for getting absence
+#[tauri::command]
+pub fn get_absence(school_id: &str) -> String {
+    match scrape_absence(school_id) {
+        Ok(data) => serde_json::to_string(&data).unwrap(),
+        Err(e) => format!("Error fetching absence data: {}", e),
+    }
+}
+
+fn scrape_assignments(school_id: &str) -> Result<Vec<Assignment>, Box<dyn Error>> {
+    let url = format!(
+        "https://www.lectio.dk/lectio/{}/OpgaverElev.aspx",
+        school_id
+    );
+
+    let client = CLIENT_MANAGER
+        .get_client()
+        .ok_or("Client not initialized")?;
+
+    let response = client.get(&url).send()?;
+    if response.status() != 200 {
+        return Err("Failed to fetch assignments page".into());
+    }
+
+    let text = response.text()?;
+    let document = Html::parse_document(&text);
+    let selector = Selector::parse("tr").unwrap(); // Assuming all relevant rows are within <tr> tags directly
+
+    let mut assignments = Vec::new();
+    for element in document.select(&selector) {
+        let columns: Vec<_> = element.select(&Selector::parse("td").unwrap()).collect();
+
+        // Safely extract data from columns, check if enough columns exist
+        if columns.len() >= 8 {
+            let title = columns[2]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let due_date = columns[3]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let description = columns[7]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string(); // Adjust based on actual content location
+            let responsible = columns[6]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string(); // Adjust based on actual content location
+
+            assignments.push(Assignment {
+                title,
+                description,
+                due_date,
+                responsible,
+            });
+        }
+    }
+
+    Ok(assignments)
+}
+
+#[tauri::command]
+pub fn get_assignments(school_id: &str) -> String {
+    match scrape_assignments(school_id) {
+        Ok(assignments) => serde_json::to_string(&assignments).unwrap(),
         Err(e) => format!("Error: {}", e),
     }
 }

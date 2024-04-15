@@ -1,33 +1,39 @@
 import { createSignal, onMount } from 'solid-js';
-import { useLocation } from "@solidjs/router";
-import { useStore } from "../store";
 import { invoke } from '@tauri-apps/api/core';
 import useTheme from '../hooks/useTheme';
 
-function Assignment() {
-  const { isLoggedIn } = useStore();
-  const { pathname } = useLocation();
-  const [theme, setTheme] = useTheme();
-
-  if (!isLoggedIn()) {
-    console.log("User not logged in. Redirecting to login page.");
-    window.location.href = "/login?redirect=" + pathname;
-  }
+function Assignments() {
+  const [assignments, setAssignments] = createSignal([]);
+  const schoolId = localStorage.getItem('selectedSchoolId') || '';
+  const [theme] = useTheme();
 
 
-  onMount(() => {
-    if (isLoggedIn()) {
-      document.documentElement.setAttribute('data-theme', theme());
+  onMount(async () => {
+    document.documentElement.setAttribute('data-theme', theme()); // Apply saved theme on load
+    try {
+      const response = await invoke('get_assignments', { schoolId: schoolId });
+      setAssignments(JSON.parse(response));
+      console.log('Assignments:', assignments());
+    } catch (error) {
+      console.error('Failed to fetch assignments:', error);
     }
   });
 
-
-
   return (
     <div>
-      <h1>Opgaver</h1>
+      <h1>Assignments</h1>
+      <ul>
+        {assignments().map((assignment, index) => (
+          <li key={index}>
+            <h2>{assignment.title}</h2>
+            <p>{assignment.description}</p>
+            <p>Deadline: {assignment.due_date}</p>
+            <p>Fravær: {assignment.responsible}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 
-export default Assignment;
+export default Assignments;

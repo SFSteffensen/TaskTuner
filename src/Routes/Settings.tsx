@@ -1,10 +1,12 @@
-import { createSignal, onMount } from 'solid-js';
-import { useStore } from "../store";
+import { invoke } from '@tauri-apps/api/core';
+import { createEffect, createSignal, onMount } from 'solid-js';
 import useTheme from '../hooks/useTheme';
+import { useStore } from "../store";
 
 function Settings() {
   const { isLoggedIn } = useStore();
   const [theme, setTheme] = createSignal(localStorage.getItem('theme') || 'light');
+  const [absenceData, setAbsenceData] = createSignal({});
 
   const changeTheme = (newTheme) => {
     setTheme(newTheme); // Update the local state
@@ -12,9 +14,20 @@ function Settings() {
     document.documentElement.setAttribute('data-theme', newTheme); // Apply the theme
   };
 
+  async function fetchAbsence() {
+    try {
+      const response = await invoke('get_absence', { schoolId: '165' }); // Update with correct school_id
+      setAbsenceData(JSON.parse(response));
+      console.log('Absence data fetched:', JSON.parse(response));
+    } catch (error) {
+      console.error('Failed to fetch absence data:', error);
+    }
+  }
+
   onMount(() => {
     if (isLoggedIn()) {
       document.documentElement.setAttribute('data-theme', theme()); // Apply saved theme on load
+      fetchAbsence();
     }
   });
 
@@ -28,7 +41,15 @@ function Settings() {
             Fravær
           </div>
           <div class="collapse-content">
-            <p>Fravær kommer senere</p>
+            {absenceData() ? (
+              <ul>
+                {Object.entries(absenceData()).map(([team, details]) => (
+                  <li key={team}>
+                    {team}: {details.opgjort.procent}, {details.for_the_year.procent}
+                  </li>
+                ))}
+              </ul>
+            ) : <p>Loading absence data...</p>}
           </div>
         </div>
 
