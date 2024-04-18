@@ -7,7 +7,6 @@ function Assignments() {
   const schoolId = localStorage.getItem('selectedSchoolId') || '';
   const [theme] = useTheme();
 
-
   onMount(async () => {
     document.documentElement.setAttribute('data-theme', theme()); // Apply saved theme on load
     try {
@@ -25,10 +24,15 @@ function Assignments() {
       <ul>
         {assignments().map((assignment, index) => (
           <li key={index}>
-            <h2>{assignment.title}</h2>
-            <p>{assignment.description}</p>
-            <p>Deadline: {assignment.due_date}</p>
-            <p>Fravær: {assignment.responsible}</p>
+            <h2>{assignment.title} - {assignment.team} (Week {assignment.week})</h2>
+            <p>{assignment.assignment_note}</p>
+            <p>Deadline: {assignment.deadline}</p>
+            <p>Student Time: {assignment.student_time} hours</p>
+            <p>Status: {assignment.status}</p>
+            <p>Absence: {assignment.absence_percent}%</p>
+            <p>Follow-up Needed: {assignment.follow_up}</p>
+            <p>Grade: {assignment.grade}</p>
+            <p>Student Note: {assignment.student_note}</p>
           </li>
         ))}
       </ul>
