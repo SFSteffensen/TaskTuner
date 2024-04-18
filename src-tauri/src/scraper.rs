@@ -78,10 +78,17 @@ struct WritingDetail {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Assignment {
+    week: String,
+    team: String,
     title: String,
-    description: String,
-    due_date: String,
-    responsible: String,
+    deadline: String,
+    student_time: String,
+    status: String,
+    absence_percent: String,
+    follow_up: String,
+    assignment_note: String,
+    grade: String,
+    student_note: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -427,38 +434,87 @@ fn scrape_assignments(school_id: &str) -> Result<Vec<Assignment>, Box<dyn Error>
     for element in document.select(&selector) {
         let columns: Vec<_> = element.select(&Selector::parse("td").unwrap()).collect();
 
-        // Safely extract data from columns, check if enough columns exist
-        if columns.len() >= 8 {
+        // Check if enough columns exist
+        if columns.len() >= 11 {
+            let week = columns[0]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let team = columns[1]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
             let title = columns[2]
                 .text()
                 .collect::<Vec<_>>()
                 .join(" ")
                 .trim()
                 .to_string();
-            let due_date = columns[3]
+            let deadline = columns[3]
                 .text()
                 .collect::<Vec<_>>()
                 .join(" ")
                 .trim()
                 .to_string();
-            let description = columns[7]
+            let student_time = columns[4]
                 .text()
                 .collect::<Vec<_>>()
                 .join(" ")
                 .trim()
-                .to_string(); // Adjust based on actual content location
-            let responsible = columns[6]
+                .to_string();
+            let status = columns[5]
                 .text()
                 .collect::<Vec<_>>()
                 .join(" ")
                 .trim()
-                .to_string(); // Adjust based on actual content location
+                .to_string();
+            let absence_percent = columns[6]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let follow_up = columns[7]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let assignment_note = columns[8]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let grade = columns[9]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let student_note = columns[10]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
 
             assignments.push(Assignment {
+                week,
+                team,
                 title,
-                description,
-                due_date,
-                responsible,
+                deadline,
+                student_time,
+                status,
+                absence_percent,
+                follow_up,
+                assignment_note,
+                grade,
+                student_note,
             });
         }
     }
