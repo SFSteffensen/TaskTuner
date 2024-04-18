@@ -1,10 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
-import { BaseDirectory, mkdir, readFile, writeFile } from "@tauri-apps/plugin-fs";
+import { BaseDirectory, exists, mkdir, readFile, writeFile } from "@tauri-apps/plugin-fs";
 
 import { createEffect, createSignal, onMount } from 'solid-js';
 import useTheme from '../hooks/useTheme';
+import useAuth from "../hooks/useAuth";
 import fuzzysort from 'fuzzysort';
-import { convertMapToJSON, decodeData, encodeData } from "../lib/Utils.ts";
+import { convertMapToJSON, decodeData, encodeData, prettyPrintJSON } from "../lib/Utils.ts";
 
 function Login() {
     const [schoolList, setSchoolList] = createSignal<Map<string, string>>(new Map());
@@ -15,7 +16,6 @@ function Login() {
     const [username, setUsername] = createSignal('');
     const [password, setPassword] = createSignal('');
     const [searchTerm, setSearchTerm] = createSignal('');
-    const [isLoggedIn, setIsLoggedIn] = createSignal(false);
     const [theme, setTheme] = useTheme();
 
     const selectSchool = (id: string, name: string) => {
@@ -53,6 +53,8 @@ function Login() {
     }
 
     async function login() {
+        const {login} = useAuth();
+
         if (!selectedSchoolId() || !username() || !password()) {
             setLoginStatus("Please fill in all fields.");
             return;
@@ -67,8 +69,15 @@ function Login() {
 
             if (responseData.status === "success") {
                 setLoginStatus("Login Successful!");
-                setIsLoggedIn(true);
                 await mkdir(selectedSchoolId(), {baseDir: BaseDirectory.AppData, recursive: true})
+
+                // Save the user's credentials
+                await writeFile(`${selectedSchoolId()}/credentials.json`, encodeData(prettyPrintJSON({
+                    username: username(),
+                    password: password()
+                })), {baseDir: BaseDirectory.AppData, create: true});
+                login();
+
                 window.location.href = "/";
 
             } else {
@@ -90,6 +99,31 @@ function Login() {
     onMount(() => {
         document.documentElement.setAttribute('data-theme', theme());
         fetchSchools();
+
+        const selectedSchoolId = localStorage.getItem('selectedSchoolId');
+        if (selectedSchoolId) {
+            setSelectedSchoolId(selectedSchoolId);
+
+            exists(`${selectedSchoolId}/credentials.json`, {baseDir: BaseDirectory.AppData})
+                .then(exists => {
+                    if (!exists) throw new Error("Credentials do not exist");
+                    return readFile(`${selectedSchoolId}/credentials.json`, {baseDir: BaseDirectory.AppData});
+                })
+                .then(data => {
+                    if (!data) throw new Error("No data in credentials file");
+                    const credentials = JSON.parse(decodeData(data));
+                    setUsername(credentials.username);
+                    setPassword(credentials.password);
+                    return login();
+                })
+                .then(() => {
+                    console.log("Auto-login successful!");
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    setIsLoggedIn(false);
+                });
+        }
     });
 
     createEffect(() => {

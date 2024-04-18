@@ -4,7 +4,12 @@ export function convertMapToJSON(map: Map<string, any>): string {
 }
 
 
+export function prettyPrintJSON(data: JSON): string {
+    return JSON.stringify(data, null, 2);
+}
+
 export function encodeData(data: string): Uint8Array {
+
     return new TextEncoder().encode(data);
 }
 

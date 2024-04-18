@@ -1,10 +1,10 @@
 import { onMount } from 'solid-js';
 import { useLocation } from "@solidjs/router";
-import { useStore } from "../store";
 import useTheme from '../hooks/useTheme';
+import useAuth from "../hooks/useAuth.ts";
 
 function Settings() {
-  const { isLoggedIn } = useStore();
+  const { isLoggedIn } = useAuth();
   const { pathname } = useLocation();
   const [theme, changeTheme] = useTheme(); // Utilizing the custom hook for theme management
 

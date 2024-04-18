@@ -1,8 +1,8 @@
-import { useStore } from "../store.ts";
-import { useLocation } from "@solidjs/router"; // Import useLocation hook
+import { useLocation } from "@solidjs/router";
+import useAuth from "../hooks/useAuth.ts"; // Import useLocation hook
 
 function Nav() {
-  const { isLoggedIn } = useStore();
+  const { isLoggedIn } = useAuth();
   const { pathname } = useLocation(); // Get the current pathname
 
   function Navigate(path: string) {

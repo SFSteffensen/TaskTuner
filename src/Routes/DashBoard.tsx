@@ -1,14 +1,15 @@
 import { createSignal, onMount } from 'solid-js';
 import { useLocation } from "@solidjs/router";
-import { useStore } from "../store";
 import { invoke } from '@tauri-apps/api/core';
 import useTheme from '../hooks/useTheme';
+import useAuth from "../hooks/useAuth.ts";
 
 function DashBoard() {
-  const { isLoggedIn } = useStore();
+  const {isLoggedIn} = useAuth();
   const { pathname } = useLocation();
   const [dashboardData, setDashboardData] = createSignal('');
   const [theme, setTheme] = useTheme(); // Use the theme from the useTheme hook
+
 
   if (!isLoggedIn()) {
     console.log("User not logged in. Redirecting to login page.");
