@@ -55,6 +55,51 @@ struct ClassDetails {
     notes: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct AbsenceData {
+    team: String,
+    opgjort: AbsenceDetail,
+    for_the_year: AbsenceDetail,
+    writing: Option<WritingDetail>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct AbsenceDetail {
+    procent: String,
+    moduler: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct WritingDetail {
+    opgjort: AbsenceDetail,
+    for_the_year_wrting: AbsenceDetail,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Assignment {
+    week: String,
+    team: String,
+    title: String,
+    deadline: String,
+    student_time: String,
+    status: String,
+    absence_percent: String,
+    follow_up: String,
+    assignment_note: String,
+    grade: String,
+    student_note: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Message {
+    topic: String,
+    sender: String,
+    date: String,
+    time: String,
+    receivers: String,
+    message: String,
+}
+
 #[tauri::command]
 pub fn get_schools() -> HashMap<String, String> {
     // Make a GET request to the iframe's source URL
@@ -292,6 +337,194 @@ fn scrape_schedule(school_id: &str) -> Result<String, Box<dyn Error>> {
 pub fn get_schedule(school_id: &str) -> String {
     match scrape_schedule(&school_id) {
         Ok(schedule) => schedule,
+        Err(e) => format!("Error: {}", e),
+    }
+}
+
+// Function to scrape absence
+fn scrape_absence(
+    school_id: &str,
+) -> Result<HashMap<String, AbsenceData>, Box<dyn std::error::Error>> {
+    let client = CLIENT_MANAGER
+        .get_client()
+        .ok_or("Client not initialized")?;
+    let url = format!(
+        "https://www.lectio.dk/lectio/{}/subnav/fravaerelev.aspx",
+        school_id
+    );
+    let res = client.get(&url).send()?;
+    if res.status() != 200 {
+        return Err("Failed to fetch absence data".into());
+    }
+
+    let body = res.text()?;
+    let document = Html::parse_document(&body);
+    let selector =
+        Selector::parse("table#s_m_Content_Content_SFTabStudentAbsenceDataTable").unwrap();
+    let table = document
+        .select(&selector)
+        .next()
+        .ok_or("Absence table not found")?;
+
+    let mut results = HashMap::new();
+    for row in table.select(&Selector::parse("tr").unwrap()) {
+        let columns: Vec<_> = row.select(&Selector::parse("td").unwrap()).collect();
+        if columns.len() >= 9 {
+            let team = columns[0].text().collect::<String>();
+            results.insert(
+                team.clone(),
+                AbsenceData {
+                    team,
+                    opgjort: AbsenceDetail {
+                        procent: columns[1].text().collect(),
+                        moduler: columns[2].text().collect(),
+                    },
+                    for_the_year: AbsenceDetail {
+                        procent: columns[3].text().collect(),
+                        moduler: columns[4].text().collect(),
+                    },
+                    writing: Some(WritingDetail {
+                        opgjort: AbsenceDetail {
+                            procent: columns[5].text().collect(),
+                            moduler: columns[6].text().collect(),
+                        },
+                        for_the_year_wrting: AbsenceDetail {
+                            procent: columns[7].text().collect(),
+                            moduler: columns[8].text().collect(),
+                        },
+                    }),
+                },
+            );
+        }
+    }
+
+    Ok(results)
+}
+
+// Tauri command for getting absence
+#[tauri::command]
+pub fn get_absence(school_id: &str) -> String {
+    match scrape_absence(school_id) {
+        Ok(data) => serde_json::to_string(&data).unwrap(),
+        Err(e) => format!("Error fetching absence data: {}", e),
+    }
+}
+
+fn scrape_assignments(school_id: &str) -> Result<Vec<Assignment>, Box<dyn Error>> {
+    let url = format!(
+        "https://www.lectio.dk/lectio/{}/OpgaverElev.aspx",
+        school_id
+    );
+
+    let client = CLIENT_MANAGER
+        .get_client()
+        .ok_or("Client not initialized")?;
+
+    let response = client.get(&url).send()?;
+    if response.status() != 200 {
+        return Err("Failed to fetch assignments page".into());
+    }
+
+    let text = response.text()?;
+    let document = Html::parse_document(&text);
+    let selector = Selector::parse("tr").unwrap(); // Assuming all relevant rows are within <tr> tags directly
+
+    let mut assignments = Vec::new();
+    for element in document.select(&selector) {
+        let columns: Vec<_> = element.select(&Selector::parse("td").unwrap()).collect();
+
+        // Check if enough columns exist
+        if columns.len() >= 11 {
+            let week = columns[0]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let team = columns[1]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let title = columns[2]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let deadline = columns[3]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let student_time = columns[4]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let status = columns[5]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let absence_percent = columns[6]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let follow_up = columns[7]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let assignment_note = columns[8]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let grade = columns[9]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+            let student_note = columns[10]
+                .text()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .trim()
+                .to_string();
+
+            assignments.push(Assignment {
+                week,
+                team,
+                title,
+                deadline,
+                student_time,
+                status,
+                absence_percent,
+                follow_up,
+                assignment_note,
+                grade,
+                student_note,
+            });
+        }
+    }
+
+    Ok(assignments)
+}
+
+#[tauri::command]
+pub fn get_assignments(school_id: &str) -> String {
+    match scrape_assignments(school_id) {
+        Ok(assignments) => serde_json::to_string(&assignments).unwrap(),
         Err(e) => format!("Error: {}", e),
     }
 }

@@ -1,53 +1,258 @@
 import { onMount } from 'solid-js';
 import { useLocation } from "@solidjs/router";
+import { invoke } from '@tauri-apps/api/core';
+import { createEffect, createSignal, onMount } from 'solid-js';
 import useTheme from '../hooks/useTheme';
 import useAuth from "../hooks/useAuth.ts";
+import { useStore } from "../store";
+import Chart from 'chart.js/auto';
 
 function Settings() {
+  const { isLoggedIn } = useStore();
+  const [theme, setTheme] = createSignal(localStorage.getItem('theme') || 'light');
+  const [absenceData, setAbsenceData] = createSignal({});
+  const schoolId = localStorage.getItem('selectedSchoolId') || '';
+
+  const changeTheme = (newTheme) => {
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+  };
+
+  async function fetchAbsence() {
+    try {
+      const response = await invoke('get_absence', { schoolId: schoolId });
+      const data = JSON.parse(response);
+      setAbsenceData(data);
+      updateChart(data);
+    } catch (error) {
+      console.error('Failed to fetch absence data:', error);
+    }
+  }
+
+  function generateColors(count) {
+    const backgroundColors = [];
+    const borderColors = [];
+    const saturation = 70;
+    const lightness = 50;
+
+    for (let i = 0; i < count; i++) {
+      const hue = Math.floor((i / count) * 360);
+      backgroundColors.push(`hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`);
+      borderColors.push(`hsla(${hue}, ${saturation}%, ${lightness}%, 1)`);
+    }
+
+    return { backgroundColors, borderColors };
+  }
+
+  console.log(generateColors(5));
+
+
+  function updateChart(data) {
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const opgjortData = [];
+    const opgjortModules = [];
+    const forAaretData = [];
+    const forAaretModules = [];
+    const labels = [];
+
+    Object.entries(data).forEach(([team, details]) => {
+      if (team !== "Samlet") {
+        labels.push(team);
+        opgjortData.push(parseFloat(details.opgjort.procent.replace('%', '')));
+        opgjortModules.push(details.opgjort.moduler);
+        forAaretData.push(parseFloat(details.for_the_year.procent.replace('%', '')));
+        forAaretModules.push(details.for_the_year.moduler);
+      }
+    });
+
+    const { backgroundColors, borderColors } = generateColors(labels.length);
+
+    const chartData = {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Opgjort',
+          data: opgjortData,
+          backgroundColor: backgroundColors,
+          borderColor: borderColors,
+          borderWidth: 1
+        },
+        {
+          label: 'For Året',
+          data: forAaretData,
+          backgroundColor: backgroundColors.map(color => color.replace('0.7', '0.85')), // Slightly darker for contrast
+          borderColor: borderColors,
+          borderWidth: 1
+        }
+      ]
+    };
+
+    const tooltipCallback = {
+      label: function(tooltipItem) {
+        let label = chartData.labels[tooltipItem.dataIndex];
+        let datasetLabel = chartData.datasets[tooltipItem.datasetIndex].label;
+        let value = chartData.datasets[tooltipItem.datasetIndex].data[tooltipItem.dataIndex];
+        let modules = tooltipItem.datasetIndex === 0 ? opgjortModules[tooltipItem.dataIndex] : forAaretModules[tooltipItem.dataIndex];
+        return `${label} (${datasetLabel}): ${value}% (${modules} moduler)`;
+      }
+    };
   const { isLoggedIn } = useAuth();
   const { pathname } = useLocation();
   const [theme, changeTheme] = useTheme(); // Utilizing the custom hook for theme management
 
-  if (!isLoggedIn()) {
-    console.log("User not logged in. Redirecting to login page.");
-    window.location.href = "/login?redirect=" + pathname;
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: chartData,
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: false, text: '' },
+          tooltip: {
+            callbacks: tooltipCallback
+          }
+        }
+      }
+    });
   }
+
+
 
   onMount(() => {
     if (isLoggedIn()) {
-      console.log("User is logged in.");
+      document.documentElement.setAttribute('data-theme', theme());
+      fetchAbsence();
     }
-    console.log("page: {} loaded", pathname);
   });
 
   return (
-    <div>
-      <div class="overflow-x-auto p-4">
-        <h1 class="text-2xl font-bold">Settings</h1>
-        <h2>Tema:</h2>
-        <div class="dropdown mb-72">
-          <div tabindex="0" role="button" class="btn m-1">
-            Theme
-            <svg width="12px" height="12px" class="h-2 w-2 fill-current opacity-60 inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048"><path d="M1799 349l242 241-1017 1017L7 590l242-241 775 775 775-775z"></path></svg>
+    <div class="overflow-x-auto p-4">
+      <h1 class="text-2xl font-bold">Mere</h1>
+      <div class="join join-vertical w-full">
+        <div class="collapse collapse-arrow join-item border border-base-300">
+          <input type="radio" name="my-accordion-1" />
+          <div class="collapse-title text-xl font-medium">
+            Fravær
           </div>
-          <ul tabindex="0" class="dropdown-content z-[1] p-2 shadow-2xl bg-base-300 rounded-box w-52">
-            {['light', 'dark', 'nord', 'retro', 'black', 'lofi', 'night', 'cyberpunk', 'aqua', 'valentine', 'pastel'].map(t => (
-              <li key={t}>
-                <input
-                  type="radio"
-                  name="theme-dropdown"
-                  class="theme-controller btn btn-sm btn-block btn-ghost justify-start"
-                  aria-label={t.charAt(0).toUpperCase() + t.slice(1)}
-                  value={t}
-                  checked={theme() === t}
-                  onChange={(e) => changeTheme(e.currentTarget.value)}
-                />
-              </li>
-            ))}
-          </ul>
+
+          <div class="collapse-content text-center">
+            <div class="flex flex-col md:flex-row justify-center items-start space-y-8 md:space-y-0 md:space-x-8">
+              <div>
+
+                <h2 class="text-lg font-semibold mb-4">Fysisk Fravær</h2>
+                {absenceData() && absenceData()["Samlet"] ? (
+                  <div class="stats shadow">
+                    <div class="stat bg-base-200">
+                      <div class="stat-title">Opgjort</div>
+                      <div class="stat-value">{absenceData()["Samlet"].opgjort.procent}</div>
+                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].opgjort.moduler} moduler</div>
+                    </div>
+                    <div class="stat bg-base-200">
+                      <div class="stat-title">For Året</div>
+                      <div class="stat-value">{absenceData()["Samlet"].for_the_year.procent}</div>
+                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].for_the_year.moduler} moduler</div>
+                    </div>
+                  </div>
+                ) : <p>Loading absence data...</p>}
+              </div>
+
+
+              <div>
+                <h2 class="text-lg font-semibold mb-4">Skriftligt Fravær</h2>
+                {absenceData() && absenceData()["Samlet"] && absenceData()["Samlet"].writing ? (
+                  <div class="stats shadow">
+                    <div class="stat bg-base-200">
+                      <div class="stat-title">Opgjort</div>
+                      <div class="stat-value">{absenceData()["Samlet"].writing.opgjort.procent}</div>
+                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].writing.opgjort.moduler} moduler</div>
+                    </div>
+                    <div class="stat bg-base-200">
+                      <div class="stat-title">For Året</div>
+                      <div class="stat-value">{absenceData()["Samlet"].writing.for_the_year_wrting.procent}</div>
+                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].writing.for_the_year_wrting.moduler} moduler</div>
+                    </div>
+                  </div>
+                ) : <p>Loading written absence data...</p>}
+              </div>
+            </div>
+            <div class="relative w-full max-w-sm mx-auto pt-4 pb-4">
+              <canvas id="myChart"></canvas>
+            </div>
+
+
+            <div>
+              {absenceData() && (
+                <div class="stats shadow bg-base-200">
+                  {Object.entries(absenceData()).map(([team, details]) => {
+                    if (team !== "Samlet") { // Check to exclude 'Samlet'
+                      return (
+                        <div class="stat place-items-center" key={team}>
+                          <div class="stat-title">{team}</div>
+                          <div class="stat-value">{details.opgjort.procent}</div>
+                          <div class="stat-desc text-secondary">{details.opgjort.moduler}</div>
+                          <div class="stat-value">{details.for_the_year.procent}</div>
+                          <div class="stat-desc text-secondary">{details.for_the_year.moduler}</div>
+                        </div>
+                      );
+                    }
+                  })}
+                </div>
+              )}
+            </div>
+
+
+
+          </div>
+        </div>
+
+        <div class="collapse collapse-arrow join-item border border-base-300">
+          <input type="radio" name="my-accordion-1" />
+          <div class="collapse-title text-xl font-medium">
+            Dokumenter
+          </div>
+          <div class="collapse-content">
+            <p>Dokumenter kommer senere</p>
+          </div>
+        </div>
+
+        <div class="collapse collapse-arrow join-item border border-base-300">
+          <input type="radio" name="my-accordion-1" />
+          <div class="collapse-title text-xl font-medium">
+            Karakterer
+          </div>
+          <div class="collapse-content">
+            <p>Karaktere kommer senere</p>
+          </div>
+        </div>
+
+        <div class="collapse collapse-arrow join-item border border-base-300">
+          <input type="radio" name="my-accordion-1" />
+          <div class="collapse-title text-xl font-medium">
+            Tema
+          </div>
+          <div class="collapse-content">
+            <div>
+              {['light', 'dark', 'nord', 'retro', 'black', 'lofi', 'night', 'cyberpunk', 'aqua', 'valentine', 'pastel'].map(t => (
+                <div class="form-control">
+                  <label class="label cursor-pointer gap-4">
+                    <span class="label-text">{t.charAt(0).toUpperCase() + t.slice(1)}</span>
+                    <input
+                      type="radio"
+                      name="theme-radios"
+                      class="radio theme-controller"
+                      value={t}
+                      checked={theme() === t}
+                      onChange={(e) => changeTheme(e.currentTarget.value)}
+                    />
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }
 

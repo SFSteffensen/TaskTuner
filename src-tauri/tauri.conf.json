@@ -1,55 +1,33 @@
 {
+  "productName": "tasktuner",
+  "version": "0.0.0",
+  "identifier": "com.tauri.dev",
   "build": {
-    "beforeBuildCommand": "pnpm build",
-    "beforeDevCommand": "pnpm dev",
-    "devPath": "http://localhost:1420",
-    "distDir": "../dist"
+    "beforeDevCommand": "bun run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "bun run build",
+    "frontendDist": "../dist"
   },
-  "package": {
-    "productName": "TaskTuner",
-    "version": "0.0.0"
-  },
-  "tauri": {
-    "bundle": {
-      "iOS": {
-        "developmentTeam": "MS Team"
-      },
-      "active": true,
-      "targets": "all",
-      "identifier": "com.task.tuner.dev",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ]
-    },
-    "security": {
-      "csp": null
-    },
-    "windows": [
+  "app": {"windows": [
       {
-        "fullscreen": false,
-        "resizable": true,
-        "title": "TaskTuner",
+        "title": "tasktuner",
         "width": 800,
         "height": 600
       }
-    ]
-  },
-  "plugins": {
-    "shell": {
-      "open": true
-    },
-    "fs": {
-      "readFile": true,
-      "readDir": true,
-      "scope": [
-        "$APPDATA",
-        "$APPDATA/*",
-        "$APPDATA/**/*"
-      ]
+    ],
+    "security": {
+      "csp": null
     }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
   }
 }
