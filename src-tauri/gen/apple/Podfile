@@ -1,13 +1,13 @@
 # Uncomment the next line to define a global platform for your project
 
-target 'schooldayplanner_iOS' do
+target 'tasktuner_iOS' do
 platform :ios, '13.0'
-  # Pods for schooldayplanner_iOS
+  # Pods for tasktuner_iOS
 end
 
-target 'schooldayplanner_macOS' do
+target 'tasktuner_macOS' do
 platform :osx, '11.0'
-  # Pods for schooldayplanner_macOS
+  # Pods for tasktuner_macOS
 end
 
 # Delete the deployment target for iOS and macOS, causing it to be inherited from the Podfile

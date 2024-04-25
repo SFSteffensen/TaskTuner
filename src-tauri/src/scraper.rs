@@ -3,7 +3,6 @@ use regex::Regex;
 use reqwest::blocking::get;
 use reqwest::blocking::Client;
 use reqwest::cookie::Jar;
-use reqwest::header::CONTENT_TYPE;
 use reqwest::Url;
 use scraper::{Html, Selector};
 use select::document::Document;
