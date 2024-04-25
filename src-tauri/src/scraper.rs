@@ -455,13 +455,12 @@ fn scrape_assignments(school_id: &str) -> Result<Vec<Assignment>, Box<dyn Error>
                 .join(" ")
                 .trim()
                 .to_string();
-            let deadline = columns[3]
+            let mut deadline = columns[3]
                 .text()
                 .collect::<Vec<_>>()
                 .join(" ")
                 .trim()
                 .to_string();
-            // student time is a float, with a comma as decimal separator
             let student_time = columns[4]
                 .text()
                 .collect::<Vec<_>>()
@@ -508,6 +507,8 @@ fn scrape_assignments(school_id: &str) -> Result<Vec<Assignment>, Box<dyn Error>
                 .trim()
                 .to_string();
             let urgency_score = calculate_urgency(&deadline, student_time);
+
+            deadline.push_str(&format!(" ({})", time_until_due(&deadline)));
 
             assignments.push(Assignment {
                 week,
@@ -580,5 +581,35 @@ fn calculate_urgency(deadline: &str, student_time: f32) -> f32 {
             println!("Error parsing deadline datetime.");
             10.0 // Arbitrary high urgency score or adjust as needed
         }
+    }
+}
+
+// get the time until the deadline in Days, hours and minutes (Dage: , Timer: , Minutter: ) if the deadline is in the future
+// if the deadline is in the past, return "Deadline overgået"
+// if the deadline is the same day, remove the "Dage: " and only return the hours and minutes
+fn time_until_due(deadline: &str) -> String {
+    let now = Local::now();
+
+    // Parse the deadline string (dd/mm-yyyy hh:mm) into a date and time
+    let format = "%d/%m-%Y %H:%M";
+    let deadline_datetime = NaiveDateTime::parse_from_str(deadline, format);
+
+    // Calculate the time until the deadline in minutes and convert to days, hours and minutes
+    match deadline_datetime {
+        Ok(deadline_dt) => {
+            let duration_until_due = deadline_dt.signed_duration_since(now.naive_local());
+            let days = duration_until_due.num_days();
+            let hours = duration_until_due.num_hours() % 24;
+            let minutes = duration_until_due.num_minutes() % 60;
+
+            if days > 0 {
+                format!("Dage: {}, Timer: {}, Minutter: {}", days, hours, minutes)
+            } else if hours > 0 {
+                format!("Timer: {}, Minutter: {}", hours, minutes)
+            } else {
+                format!("Minutter: {}", minutes)
+            }
+        }
+        Err(_) => "Deadline overgået".to_string(),
     }
 }

@@ -1,22 +1,28 @@
-import { createSignal, onMount } from 'solid-js';
+import { createSignal, onMount, onCleanup } from 'solid-js';
 import { invoke } from '@tauri-apps/api/core';
 import useTheme from '../hooks/useTheme';
 
 function Assignments() {
   const [assignments, setAssignments] = createSignal([]);
   const [filter, setFilter] = createSignal('Venter');
-  const [sortBy, setSortBy] = createSignal('deadline'); // Options: 'student_time', 'deadline', 'urgency'
+  const [sortBy, setSortBy] = createSignal('deadline');
   const schoolId = localStorage.getItem('selectedSchoolId') || '';
   const [theme] = useTheme();
 
-  onMount(async () => {
-    document.documentElement.setAttribute('data-theme', theme());
+  const fetchAssignments = async () => {
     try {
       const response = await invoke('get_assignments', { schoolId });
       setAssignments(JSON.parse(response));
     } catch (error) {
       console.error('Failed to fetch assignments:', error);
     }
+  };
+
+  onMount(() => {
+    document.documentElement.setAttribute('data-theme', theme());
+    fetchAssignments(); // Initial fetch
+    const interval = setInterval(fetchAssignments, 60000); // Fetch every minute
+    onCleanup(() => clearInterval(interval)); // Clear interval on component unmount
   });
 
   function parseEuropeanDate(dateStr) {
@@ -67,11 +73,31 @@ function Assignments() {
         <table class="table w-full table-compact table-fixed">
           <thead>
             <tr>
-              <th>Titel</th>
-              <th>Afleveringsfrist</th>
-              <th>Elevtimer</th>
-              <th>Status</th>
-              <th>Urgency Score</th>
+              <th>
+                <div class="tooltip tooltip-right" data-tip="Opgavens Navn">
+                  Titel
+                </div>
+              </th>
+              <th>
+                <div class="tooltip" data-tip="Hvornår Opgaven skal afleveres">
+                  Afleveringsfrist
+                </div>
+              </th>
+              <th>
+                <div class="tooltip" data-tip="Mængden af Elevtimer opgaven tæller for">
+                  Elevtimer
+                </div>
+              </th>
+              <th>
+                <div class="tooltip" data-tip="Er opgaven afleveret?">
+                  Status
+                </div>
+              </th>
+              <th>
+                <div class="tooltip tooltip-left" data-tip="Hvor Meget du bør prioritere opgaven">
+                  Haster Score
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -81,7 +107,7 @@ function Assignments() {
                 <td>{formatDateString(assignment.deadline)}</td>
                 <td>{assignment.student_time.toFixed(2)}</td>
                 <td>{assignment.status}</td>
-                <td>{assignment.urgency.toFixed(2)}</td>
+                <td>{(assignment.urgency * 1000.0).toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
