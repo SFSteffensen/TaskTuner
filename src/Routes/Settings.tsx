@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { createEffect, createSignal, onMount } from 'solid-js';
 import useTheme from '../hooks/useTheme';
 import { useStore } from "../store";
+import Chart from 'chart.js/auto';
 
 function Settings() {
   const { isLoggedIn } = useStore();
@@ -9,26 +10,112 @@ function Settings() {
   const [absenceData, setAbsenceData] = createSignal({});
   const schoolId = localStorage.getItem('selectedSchoolId') || '';
 
-
   const changeTheme = (newTheme) => {
-    setTheme(newTheme); // Update the local state
-    localStorage.setItem('theme', newTheme); // Save the new theme to localStorage
-    document.documentElement.setAttribute('data-theme', newTheme); // Apply the theme
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
   };
 
   async function fetchAbsence() {
     try {
       const response = await invoke('get_absence', { schoolId: schoolId });
-      setAbsenceData(JSON.parse(response));
-      console.log('Absence data fetched:', JSON.parse(response));
+      const data = JSON.parse(response);
+      setAbsenceData(data);
+      updateChart(data);
     } catch (error) {
       console.error('Failed to fetch absence data:', error);
     }
   }
 
+  function generateColors(count) {
+    const backgroundColors = [];
+    const borderColors = [];
+    const saturation = 70;
+    const lightness = 50;
+
+    for (let i = 0; i < count; i++) {
+      const hue = Math.floor((i / count) * 360);
+      backgroundColors.push(`hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`);
+      borderColors.push(`hsla(${hue}, ${saturation}%, ${lightness}%, 1)`);
+    }
+
+    return { backgroundColors, borderColors };
+  }
+
+  console.log(generateColors(5));
+
+
+  function updateChart(data) {
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const opgjortData = [];
+    const opgjortModules = [];
+    const forAaretData = [];
+    const forAaretModules = [];
+    const labels = [];
+
+    Object.entries(data).forEach(([team, details]) => {
+      if (team !== "Samlet") {
+        labels.push(team);
+        opgjortData.push(parseFloat(details.opgjort.procent.replace('%', '')));
+        opgjortModules.push(details.opgjort.moduler);
+        forAaretData.push(parseFloat(details.for_the_year.procent.replace('%', '')));
+        forAaretModules.push(details.for_the_year.moduler);
+      }
+    });
+
+    const { backgroundColors, borderColors } = generateColors(labels.length);
+
+    const chartData = {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Opgjort',
+          data: opgjortData,
+          backgroundColor: backgroundColors,
+          borderColor: borderColors,
+          borderWidth: 1
+        },
+        {
+          label: 'For Året',
+          data: forAaretData,
+          backgroundColor: backgroundColors.map(color => color.replace('0.7', '0.85')), // Slightly darker for contrast
+          borderColor: borderColors,
+          borderWidth: 1
+        }
+      ]
+    };
+
+    const tooltipCallback = {
+      label: function(tooltipItem) {
+        let label = chartData.labels[tooltipItem.dataIndex];
+        let datasetLabel = chartData.datasets[tooltipItem.datasetIndex].label;
+        let value = chartData.datasets[tooltipItem.datasetIndex].data[tooltipItem.dataIndex];
+        let modules = tooltipItem.datasetIndex === 0 ? opgjortModules[tooltipItem.dataIndex] : forAaretModules[tooltipItem.dataIndex];
+        return `${label} (${datasetLabel}): ${value}% (${modules} moduler)`;
+      }
+    };
+
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: chartData,
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: false, text: '' },
+          tooltip: {
+            callbacks: tooltipCallback
+          }
+        }
+      }
+    });
+  }
+
+
+
   onMount(() => {
     if (isLoggedIn()) {
-      document.documentElement.setAttribute('data-theme', theme()); // Apply saved theme on load
+      document.documentElement.setAttribute('data-theme', theme());
       fetchAbsence();
     }
   });
@@ -42,16 +129,74 @@ function Settings() {
           <div class="collapse-title text-xl font-medium">
             Fravær
           </div>
-          <div class="collapse-content">
-            {absenceData() ? (
-              <ul>
-                {Object.entries(absenceData()).map(([team, details]) => (
-                  <li key={team}>
-                    {team}: {details.opgjort.procent}, {details.for_the_year.procent}
-                  </li>
-                ))}
-              </ul>
-            ) : <p>Loading absence data...</p>}
+
+          <div class="collapse-content text-center">
+            <div class="flex flex-col md:flex-row justify-center items-start space-y-8 md:space-y-0 md:space-x-8">
+              <div>
+
+                <h2 class="text-lg font-semibold mb-4">Fysisk Fravær</h2>
+                {absenceData() && absenceData()["Samlet"] ? (
+                  <div class="stats shadow">
+                    <div class="stat bg-base-200">
+                      <div class="stat-title">Opgjort</div>
+                      <div class="stat-value">{absenceData()["Samlet"].opgjort.procent}</div>
+                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].opgjort.moduler} moduler</div>
+                    </div>
+                    <div class="stat bg-base-200">
+                      <div class="stat-title">For Året</div>
+                      <div class="stat-value">{absenceData()["Samlet"].for_the_year.procent}</div>
+                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].for_the_year.moduler} moduler</div>
+                    </div>
+                  </div>
+                ) : <p>Loading absence data...</p>}
+              </div>
+
+
+              <div>
+                <h2 class="text-lg font-semibold mb-4">Skriftligt Fravær</h2>
+                {absenceData() && absenceData()["Samlet"] && absenceData()["Samlet"].writing ? (
+                  <div class="stats shadow">
+                    <div class="stat bg-base-200">
+                      <div class="stat-title">Opgjort</div>
+                      <div class="stat-value">{absenceData()["Samlet"].writing.opgjort.procent}</div>
+                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].writing.opgjort.moduler} moduler</div>
+                    </div>
+                    <div class="stat bg-base-200">
+                      <div class="stat-title">For Året</div>
+                      <div class="stat-value">{absenceData()["Samlet"].writing.for_the_year_wrting.procent}</div>
+                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].writing.for_the_year_wrting.moduler} moduler</div>
+                    </div>
+                  </div>
+                ) : <p>Loading written absence data...</p>}
+              </div>
+            </div>
+            <div class="relative w-full max-w-sm mx-auto pt-4 pb-4">
+              <canvas id="myChart"></canvas>
+            </div>
+
+
+            <div>
+              {absenceData() && (
+                <div class="stats shadow bg-base-200">
+                  {Object.entries(absenceData()).map(([team, details]) => {
+                    if (team !== "Samlet") { // Check to exclude 'Samlet'
+                      return (
+                        <div class="stat place-items-center" key={team}>
+                          <div class="stat-title">{team}</div>
+                          <div class="stat-value">{details.opgjort.procent}</div>
+                          <div class="stat-desc text-secondary">{details.opgjort.moduler}</div>
+                          <div class="stat-value">{details.for_the_year.procent}</div>
+                          <div class="stat-desc text-secondary">{details.for_the_year.moduler}</div>
+                        </div>
+                      );
+                    }
+                  })}
+                </div>
+              )}
+            </div>
+
+
+
           </div>
         </div>
 
@@ -101,7 +246,7 @@ function Settings() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }
 
