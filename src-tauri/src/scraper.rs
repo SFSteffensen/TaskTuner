@@ -1,3 +1,4 @@
+use chrono::{Local, NaiveDateTime};
 use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest::blocking::get;
@@ -81,13 +82,14 @@ struct Assignment {
     team: String,
     title: String,
     deadline: String,
-    student_time: String,
+    student_time: f32,
     status: String,
     absence_percent: String,
     follow_up: String,
     assignment_note: String,
     grade: String,
     student_note: String,
+    urgency: f32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -459,12 +461,16 @@ fn scrape_assignments(school_id: &str) -> Result<Vec<Assignment>, Box<dyn Error>
                 .join(" ")
                 .trim()
                 .to_string();
+            // student time is a float, with a comma as decimal separator
             let student_time = columns[4]
                 .text()
                 .collect::<Vec<_>>()
                 .join(" ")
                 .trim()
-                .to_string();
+                .to_string()
+                .replace(",", ".")
+                .parse::<f32>()
+                .unwrap_or(0.0);
             let status = columns[5]
                 .text()
                 .collect::<Vec<_>>()
@@ -501,6 +507,7 @@ fn scrape_assignments(school_id: &str) -> Result<Vec<Assignment>, Box<dyn Error>
                 .join(" ")
                 .trim()
                 .to_string();
+            let urgency_score = calculate_urgency(&deadline, student_time);
 
             assignments.push(Assignment {
                 week,
@@ -514,6 +521,7 @@ fn scrape_assignments(school_id: &str) -> Result<Vec<Assignment>, Box<dyn Error>
                 assignment_note,
                 grade,
                 student_note,
+                urgency: urgency_score,
             });
         }
     }
@@ -526,5 +534,51 @@ pub fn get_assignments(school_id: &str) -> String {
     match scrape_assignments(school_id) {
         Ok(assignments) => serde_json::to_string(&assignments).unwrap(),
         Err(e) => format!("Error: {}", e),
+    }
+}
+
+// Urgency is calculated by: Urgency_Score = (1)/((Time Until due) + (ƛ) * (studnet_time))
+// Where ƛ is a weight on how much the assignment should be prioritized (for example if it's an exam related assignment the student would naturally wanna finish it before any of the other assignments)
+// The urgency score is then used to determine the urgency of the assignment
+// time until due is calculated by: (deadline(dd/mm-yyyy) - current date(dd/mm-yyyy)) * 24 * 60
+// Function to parse European date format "dd/mm/yyyy" and calculate the urgency score
+fn calculate_urgency(deadline: &str, student_time: f32) -> f32 {
+    let now = Local::now();
+    println!("Current date and time: {}", now);
+
+    // Parse the deadline string (dd/mm-yyyy hh:mm) into a date and time
+    let format = "%d/%m-%Y %H:%M";
+    let deadline_datetime = NaiveDateTime::parse_from_str(deadline, format);
+
+    match deadline_datetime {
+        Ok(deadline_dt) => {
+            println!("Deadline datetime: {}", deadline_dt);
+
+            // Calculate the time until the deadline in minutes
+            let duration_until_due = deadline_dt.signed_duration_since(now.naive_local());
+            println!("Duration until deadline: {}", duration_until_due);
+            let time_until_due = duration_until_due.num_minutes() as f32;
+            println!("Time until deadline: {} minutes", time_until_due);
+
+            // Determine urgency based on whether the deadline is in the future
+            if time_until_due > 0.0 {
+                // Only calculate urgency if there is time remaining
+                // print 1.0 / (time_until_due + 1.0 * student_time)
+                println!(
+                    "Urgency score: {}",
+                    1.0 / (time_until_due + 1.0 * student_time)
+                );
+                1.0 / (time_until_due + 1.0 * student_time)
+            } else {
+                // Zero urgency for past deadlines
+                println!("Deadline has passed. Urgency score: 0.0");
+                0.0
+            }
+        }
+        Err(_) => {
+            // If parsing fails, treat as immediate urgency, or log error as needed
+            println!("Error parsing deadline datetime.");
+            10.0 // Arbitrary high urgency score or adjust as needed
+        }
     }
 }
