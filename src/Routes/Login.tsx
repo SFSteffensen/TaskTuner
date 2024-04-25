@@ -56,41 +56,45 @@ function Login() {
             });
     }
 
-    async function login() {
-        const {login} = useAuth();
+    function login() {
+        const {login: loginAuth} = useAuth();
 
         if (!selectedSchoolId() || !username() || !password()) {
             setLoginStatus("Please fill in all fields.");
             return;
         }
-        try {
-            const response = await invoke('login', {
-                schoolId: selectedSchoolId(),
-                username: username(),
-                password: password(),
+
+        invoke('login', {
+            schoolId: selectedSchoolId(),
+            username: username(),
+            password: password(),
+        })
+            .then(response => {
+                const responseData = JSON.parse(response);
+
+                if (responseData.status === "success") {
+                    setLoginStatus("Login Successful!");
+
+                    return mkdir(selectedSchoolId(), {baseDir: BaseDirectory.AppData, recursive: true})
+                        .then(() => {
+                            // Save the user's credentials
+                            return writeFile(`${selectedSchoolId()}/credentials.json`, encodeData(prettyPrintJSON({
+                                username: username(),
+                                password: password()
+                            })), {baseDir: BaseDirectory.AppData, create: true});
+                        })
+                        .then(() => {
+                            loginAuth();
+                            window.location.href = "/";
+                        });
+                } else {
+                    setLoginStatus(responseData.message || "Login failed. Please try again.");
+                }
+            })
+            .catch(error => {
+                console.error("Login error:", error);
+                setLoginStatus("An unexpected error occurred. Please try again.");
             });
-            const responseData = JSON.parse(response);
-
-            if (responseData.status === "success") {
-                setLoginStatus("Login Successful!");
-                await mkdir(selectedSchoolId(), {baseDir: BaseDirectory.AppData, recursive: true})
-
-                // Save the user's credentials
-                await writeFile(`${selectedSchoolId()}/credentials.json`, encodeData(prettyPrintJSON({
-                    username: username(),
-                    password: password()
-                })), {baseDir: BaseDirectory.AppData, create: true});
-                login();
-
-                window.location.href = "/";
-
-            } else {
-                setLoginStatus(responseData.message || "Login failed. Please try again.");
-            }
-        } catch (error) {
-            console.error("Login error:", error);
-            setLoginStatus("An unexpected error occurred. Please try again.");
-        }
     }
 
     function filteredSchoolList() {
