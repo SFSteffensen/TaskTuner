@@ -1,4 +1,4 @@
-name: schooldayplanner
+name: tasktuner
 options:
   bundleIdPrefix: com.tauri
   deploymentTarget:
@@ -10,9 +10,9 @@ configs:
 settingGroups:
   app:
     base:
-      PRODUCT_NAME: SchooldayPlanner
-      PRODUCT_BUNDLE_IDENTIFIER: com.tauri.schooldayplanner
-      DEVELOPMENT_TEAM: MS Team
+      PRODUCT_NAME: tasktuner
+      PRODUCT_BUNDLE_IDENTIFIER: com.tauri.tasktuner
+      DEVELOPMENT_TEAM: 5GV3DAXB6M
 targetTemplates:
   app:
     type: application
@@ -25,19 +25,19 @@ targetTemplates:
     settings:
       groups: [app]
 targets:
-  schooldayplanner_iOS:
+  tasktuner_iOS:
     type: application
     platform: iOS
     sources:
       - path: Sources
       - path: Assets.xcassets
       - path: Externals
-      - path: schooldayplanner_iOS
+      - path: tasktuner_iOS
       - path: assets
         buildPhase: resources
         type: folder
     info:
-      path: schooldayplanner_iOS/Info.plist
+      path: tasktuner_iOS/Info.plist
       properties:
         LSRequiresIPhoneOS: true
         UILaunchStoryboardName: LaunchScreen
@@ -54,7 +54,7 @@ targets:
         CFBundleShortVersionString: 0.0.0
         CFBundleVersion: 0.0.0
     entitlements:
-      path: schooldayplanner_iOS/schooldayplanner_iOS.entitlements
+      path: tasktuner_iOS/tasktuner_iOS.entitlements
     scheme:
       environmentVariables:
         RUST_BACKTRACE: full
@@ -72,7 +72,7 @@ targets:
         EXCLUDED_ARCHS[sdk=iphoneos*]: arm64-sim x86_64
       groups: [app]
     dependencies:
-      - framework: libquantum_lib.a
+      - framework: libtasktuner_lib.a
         embed: false
       - sdk: CoreGraphics.framework
       - sdk: Metal.framework
@@ -82,9 +82,9 @@ targets:
       - sdk: UIKit.framework
       - sdk: WebKit.framework
     preBuildScripts:
-      - script: pnpm tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
+      - script: bun tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
         name: Build Rust Code
         basedOnDependencyAnalysis: false
         outputFiles:
-          - $(SRCROOT)/target/aarch64-apple-ios/${CONFIGURATION}/deps/libquantum_lib.a
-          - $(SRCROOT)/target/x86_64-apple-ios/${CONFIGURATION}/deps/libquantum_lib.a
+          - $(SRCROOT)/target/aarch64-apple-ios/${CONFIGURATION}/deps/libtasktuner_lib.a
+          - $(SRCROOT)/target/x86_64-apple-ios/${CONFIGURATION}/deps/libtasktuner_lib.a
