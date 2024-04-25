@@ -594,22 +594,28 @@ fn time_until_due(deadline: &str) -> String {
     let format = "%d/%m-%Y %H:%M";
     let deadline_datetime = NaiveDateTime::parse_from_str(deadline, format);
 
-    // Calculate the time until the deadline in minutes and convert to days, hours and minutes
     match deadline_datetime {
         Ok(deadline_dt) => {
             let duration_until_due = deadline_dt.signed_duration_since(now.naive_local());
-            let days = duration_until_due.num_days();
-            let hours = duration_until_due.num_hours() % 24;
-            let minutes = duration_until_due.num_minutes() % 60;
 
-            if days > 0 {
-                format!("Dage: {}, Timer: {}, Minutter: {}", days, hours, minutes)
-            } else if hours > 0 {
-                format!("Timer: {}, Minutter: {}", hours, minutes)
+            // Check if the duration is negative, indicating the deadline has passed
+            if duration_until_due.num_minutes() < 0 {
+                "Afleveringsfrist Slut".to_string()
             } else {
-                format!("Minutter: {}", minutes)
+                // Calculate days, hours, and minutes remaining until the deadline
+                let days = duration_until_due.num_days();
+                let hours = duration_until_due.num_hours() % 24;
+                let minutes = duration_until_due.num_minutes() % 60;
+
+                if days > 0 {
+                    format!("Dage: {}, Timer: {}, Minutter: {}", days, hours, minutes)
+                } else if hours > 0 || minutes > 0 {
+                    format!("Timer: {}, Minutter: {}", hours, minutes)
+                } else {
+                    format!("Minutter: {}", minutes)
+                }
             }
         }
-        Err(_) => "Deadline overgået".to_string(),
+        Err(_) => "Deadline overgået".to_string(), // Handle parsing error
     }
 }

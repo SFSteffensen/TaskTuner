@@ -41,7 +41,7 @@ function Assignments() {
     }).sort((a, b) => {
       switch (sortBy()) {
         case 'student_time':
-          return a.student_time - b.student_time; // Already a float, no need to parse
+          return b.student_time - a.student_time; // Already a float, no need to parse
         case 'urgency':
           return b.urgency - a.urgency; // Higher urgency first
         case 'deadline':
@@ -57,16 +57,16 @@ function Assignments() {
   return (
     <div class="overflow-x-auto p-4">
       <h1 class="text-2xl font-bold mb-4">Assignments</h1>
-      <div>
-        <select onInput={(e) => setFilter(e.currentTarget.value)}>
+      <div class="flex justify-center gap-4 mb-4"> {/* Centering selects horizontally */}
+        <select class='select select-bordered' onInput={(e) => setFilter(e.currentTarget.value)}>
           <option value="Venter">Venter</option>
           <option value="Afleveret">Afleveret</option>
           <option value="Both">Both</option>
         </select>
-        <select onInput={(e) => setSortBy(e.currentTarget.value)}>
+        <select class='select select-bordered' onInput={(e) => setSortBy(e.currentTarget.value)}>
           <option value="deadline">Afleveringsfrist</option>
           <option value="student_time">Elevtimer</option>
-          <option value="urgency">Urgency Score</option>
+          <option value="urgency">Haster Score</option>
         </select>
       </div>
       <div class="w-full mt-4">
