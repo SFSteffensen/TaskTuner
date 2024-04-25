@@ -1,9 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "~/*": ["src/*"]
-    },
     "target": "ES2020",
     "useDefineForClassFields": true,
     "module": "ESNext",
@@ -16,16 +12,15 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
 
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-
-    "jsx": "preserve",
-    "jsxImportSource": "solid-js"
+    "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "tests"],
+  "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
