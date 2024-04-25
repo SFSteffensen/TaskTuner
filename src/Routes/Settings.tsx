@@ -1,10 +1,9 @@
-import { onMount } from 'solid-js';
+import { onMount, createSignal } from 'solid-js';
 import { useLocation } from "@solidjs/router";
 import { invoke } from '@tauri-apps/api/core';
-import { createEffect, createSignal, onMount } from 'solid-js';
 import useTheme from '../hooks/useTheme';
 import useAuth from "../hooks/useAuth.ts";
-import { useStore } from "../store";
+import { useStore } from "../store.ts";
 import Chart from 'chart.js/auto';
 
 function Settings() {

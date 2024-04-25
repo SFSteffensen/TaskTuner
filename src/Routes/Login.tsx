@@ -17,6 +17,7 @@ function Login() {
     const [password, setPassword] = createSignal('');
     const [searchTerm, setSearchTerm] = createSignal('');
     const [theme, setTheme] = useTheme();
+    // useAuth
 
     const selectSchool = (id: string, name: string) => {
         setSelectedSchoolId(id);
@@ -26,30 +27,33 @@ function Login() {
         setDropdownOpen(false);
     };
 
-    async function fetchSchools() {
-        try {
-            // Try to load schools from schools.json
-            const schoolsData = await readFile('schools.json', {baseDir: BaseDirectory.AppData});
-
-            // If schools.json exists, load it into schoolList
-            if (schoolsData) {
+    function fetchSchools() {
+        // Try to load schools from schools.json
+        readFile('schools.json', {baseDir: BaseDirectory.AppData})
+            .then(schoolsData => {
+                // If schools.json exists, load it into schoolList
                 const schools = JSON.parse(decodeData(schoolsData));
                 const schoolMap: Map<string, string> = new Map(Object.entries(schools));
                 setSchoolList(schoolMap);
-            }
-        } catch (err) {
-            // If reading schools.json fails, fetch the schools
+            })
+            .catch(err => {
+                // If reading schools.json fails, fetch the schools
+                invoke('get_schools')
+                    .then(schools => {
+                        const schoolMap: Map<string, string> = new Map(Object.entries(schools));
+                        setSchoolList(schoolMap);
 
-            const schools: JSON = await invoke('get_schools');
-            const schoolMap: Map<string, string> = new Map(Object.entries(schools));
-            setSchoolList(schoolMap);
-
-            // Ensure the app data directory exists
-            await mkdir('', {baseDir: BaseDirectory.AppData, recursive: true});
-
-            const data = convertMapToJSON(schoolMap);
-            await writeFile('schools.json', encodeData(data), {baseDir: BaseDirectory.AppData, create: true});
-        }
+                        // Ensure the app data directory exists
+                        mkdir('', {baseDir: BaseDirectory.AppData, recursive: true})
+                            .then(() => {
+                                const data = convertMapToJSON(schoolMap);
+                                writeFile('schools.json', encodeData(data), {
+                                    baseDir: BaseDirectory.AppData,
+                                    create: true
+                                });
+                            });
+                    });
+            });
     }
 
     async function login() {
@@ -121,7 +125,7 @@ function Login() {
                 })
                 .catch(error => {
                     console.error("Error:", error);
-                    setIsLoggedIn(false);
+                    //setIsLoggedIn(false);
                 });
         }
     });
