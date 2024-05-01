@@ -41,6 +41,15 @@ function Schedule() {
     setScheduleData(scheduleMap);
   }
 
+  function determineCardClass(status) {
+    if (status === 'Aflyst!') {
+      return 'card bg-error shadow-xl';
+    } else if (status === 'Ændret!') {
+      return 'card bg-info shadow-xl';
+    }
+    return 'card bg-base-100 shadow-xl';
+  }
+
   onMount(() => {
     if (isLoggedIn()) {
       document.documentElement.setAttribute('data-theme', theme());
@@ -70,7 +79,7 @@ function Schedule() {
                 {days.map(day => (
                   <td>
                     {scheduleData()[time][day] ? (
-                      <div class="card bg-base-100 shadow-xl">
+                      <div class={determineCardClass(scheduleData()[time][day].status)}>
                         <div class="card-body p-2">
                           <h2 class="card-title text-sm font-bold">{scheduleData()[time][day].class_name}</h2>
                           <p class="text-xs">{scheduleData()[time][day].teacher}</p>
