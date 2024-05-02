@@ -43,7 +43,7 @@ function Schedule() {
 
   function determineCardClass(status) {
     if (status === 'Aflyst!') {
-      return 'card bg-error shadow-xl';
+      return 'card bg-error shadow-xl opacity-50';
     } else if (status === 'Ændret!') {
       return 'card bg-info shadow-xl';
     }
@@ -87,7 +87,7 @@ function Schedule() {
                         </div>
                       </div>
                     ) : (
-                      <div class="card bg-base-300 shadow-xl">
+                      <div class="card opacity-50 bg-base-300 shadow-xl">
                         <div class="card-body p-2 text-center">
                           <p class="text-xs"> </p>
                           <h2 class="text-sm font-bold">Ingen Lektion</h2>
