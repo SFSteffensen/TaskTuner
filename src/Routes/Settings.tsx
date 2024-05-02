@@ -227,7 +227,7 @@ function Settings() {
           </div>
           <div class="collapse-content">
             <div>
-              {['light', 'dark', 'nord', 'retro', 'black', 'lofi', 'night', 'cyberpunk', 'aqua', 'valentine', 'pastel'].map(t => (
+              {['light', 'dark', 'darkCyber', 'nord', 'retro', 'black', 'lofi', 'night', 'cyberpunk', 'aqua', 'valentine', 'pastel'].map(t => (
                 <div class="form-control">
                   <label class="label cursor-pointer gap-4">
                     <span class="label-text">{t.charAt(0).toUpperCase() + t.slice(1)}</span>
