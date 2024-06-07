@@ -8,6 +8,7 @@ function Settings() {
   const { isLoggedIn } = useStore();
   const [theme, setTheme] = createSignal(localStorage.getItem('theme') || 'light');
   const [absenceData, setAbsenceData] = createSignal({});
+  const [gradesData, setGradesData] = createSignal({ grades: [], grade_notes: [] });
   const schoolId = localStorage.getItem('selectedSchoolId') || '';
 
   const changeTheme = (newTheme) => {
@@ -27,6 +28,16 @@ function Settings() {
     }
   }
 
+  async function fetchGrades() {
+    try {
+      const response = await invoke('get_grades', { schoolId: schoolId });
+      const data = JSON.parse(response);
+      setGradesData(data);
+    } catch (error) {
+      console.error('Failed to fetch grades:', error);
+    }
+  }
+
   function generateColors(count) {
     const backgroundColors = [];
     const borderColors = [];
@@ -43,7 +54,6 @@ function Settings() {
   }
 
   console.log(generateColors(5));
-
 
   function updateChart(data) {
     const ctx = document.getElementById('myChart').getContext('2d');
@@ -111,12 +121,40 @@ function Settings() {
     });
   }
 
+  function calculateAverage(grades, key) {
+    let totalWeight = 0;
+    let weightedSum = 0;
+    const logEntries = [];
+
+    grades.forEach((grade) => {
+      if (grade[key]) {
+        const { grade: gradeValue, weight } = grade[key];
+        const weightedGrade = parseFloat(gradeValue) * weight;
+        weightedSum += weightedGrade;
+        totalWeight += weight;
+        logEntries.push(`(${gradeValue} * ${weight})`);
+      }
+    });
+
+    const average = totalWeight > 0 ? (weightedSum / totalWeight) : '-';
+
+    if (totalWeight > 0) {
+      console.log(`Calculation for ${key}:`);
+      console.log(logEntries.join(' + '));
+      console.log(`Total Weight: ${totalWeight}`);
+      console.log(`Weighted Sum: ${weightedSum}`);
+      console.log(`Average: ${average}`);
+    }
+
+    return totalWeight > 0 ? average.toFixed(2) : '-';
+  }
 
 
   onMount(() => {
     if (isLoggedIn()) {
       document.documentElement.setAttribute('data-theme', theme());
       fetchAbsence();
+      fetchGrades();
     }
   });
 
@@ -133,7 +171,6 @@ function Settings() {
           <div class="collapse-content text-center">
             <div class="flex flex-col md:flex-row justify-center items-start space-y-8 md:space-y-0 md:space-x-8">
               <div>
-
                 <h2 class="text-lg font-semibold mb-4">Fysisk Fravær</h2>
                 {absenceData() && absenceData()["Samlet"] ? (
                   <div class="stats shadow">
@@ -150,7 +187,6 @@ function Settings() {
                   </div>
                 ) : <p>Loading absence data...</p>}
               </div>
-
 
               <div>
                 <h2 class="text-lg font-semibold mb-4">Skriftligt Fravær</h2>
@@ -174,7 +210,6 @@ function Settings() {
               <canvas id="myChart"></canvas>
             </div>
 
-
             <div>
               {absenceData() && (
                 <div class="stats shadow bg-base-200">
@@ -194,9 +229,6 @@ function Settings() {
                 </div>
               )}
             </div>
-
-
-
           </div>
         </div>
 
@@ -216,7 +248,44 @@ function Settings() {
             Karakterer
           </div>
           <div class="collapse-content">
-            <p>Karaktere kommer senere</p>
+            {gradesData().grades.length > 0 ? (
+              <table class="table w-full table-compact table-fixed">
+                <thead>
+                  <tr>
+                    <th>Hold</th>
+                    <th>Fag</th>
+                    <th>1.standpunkt</th>
+                    <th>2.standpunkt</th>
+                    <th>Afsluttende års-/standpunktskarakter</th>
+                    <th>Intern prøve</th>
+                    <th>Eksamens-/årsprøvekarakter</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {gradesData().grades.map((grade, index) => (
+                    <tr key={index}>
+                      <td>{grade.team}</td>
+                      <td>{grade.subject}</td>
+                      <td>{grade.first_standpoint?.grade || '-'}</td>
+                      <td>{grade.second_standpoint?.grade || '-'}</td>
+                      <td>{grade.final_year_grade?.grade || '-'}</td>
+                      <td>{grade.internal_exam?.grade || '-'}</td>
+                      <td>{grade.final_exam?.grade || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan="2">Gennemsnit</td>
+                    <td>{calculateAverage(gradesData().grades, 'first_standpoint')}</td>
+                    <td>{calculateAverage(gradesData().grades, 'second_standpoint')}</td>
+                    <td>{calculateAverage(gradesData().grades, 'final_year_grade')}</td>
+                    <td>{calculateAverage(gradesData().grades, 'internal_exam')}</td>
+                    <td>{calculateAverage(gradesData().grades, 'final_exam')}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            ) : <p>Loading grades data...</p>}
           </div>
         </div>
 
