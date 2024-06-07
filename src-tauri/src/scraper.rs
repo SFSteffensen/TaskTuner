@@ -1,3 +1,4 @@
+use chrono::Datelike;
 use chrono::{Local, NaiveDateTime};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -226,11 +227,21 @@ pub fn get_dashboard(school_id: &str) -> String {
     }
 }
 
-fn scrape_schedule(school_id: &str) -> Result<String, Box<dyn Error>> {
+fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn Error>> {
     let client_opt = CLIENT_MANAGER.get_client();
 
+    // get current year and convert to string
+    let year = Local::now().year().to_string();
+
     if let Some(client) = client_opt {
-        let schedule_url = format!("https://www.lectio.dk/lectio/{}/SkemaNy.aspx", school_id);
+        let schedule_url = match week {
+            Some(w) => format!(
+                "https://www.lectio.dk/lectio/{}/SkemaNy.aspx?week={}{}",
+                school_id, w, year
+            ),
+            None => format!("https://www.lectio.dk/lectio/{}/SkemaNy.aspx", school_id),
+        };
+
         let resp = client.get(&schedule_url).send()?;
         let document = Html::parse_document(&resp.text()?);
 
@@ -336,8 +347,8 @@ fn scrape_schedule(school_id: &str) -> Result<String, Box<dyn Error>> {
 }
 
 #[tauri::command]
-pub fn get_schedule(school_id: &str) -> String {
-    match scrape_schedule(&school_id) {
+pub fn get_schedule(school_id: &str, week: Option<i8>) -> String {
+    match scrape_schedule(school_id, week) {
         Ok(schedule) => schedule,
         Err(e) => format!("Error: {}", e),
     }
