@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { createEffect, createSignal, onMount } from 'solid-js';
+import { createSignal, onMount } from 'solid-js';
 import useTheme from '../hooks/useTheme';
 import { useStore } from "../store";
 import Chart from 'chart.js/auto';
@@ -149,7 +149,6 @@ function Settings() {
     return totalWeight > 0 ? average.toFixed(2) : '-';
   }
 
-
   onMount(() => {
     if (isLoggedIn()) {
       document.documentElement.setAttribute('data-theme', theme());
@@ -160,17 +159,16 @@ function Settings() {
 
   return (
     <div class="overflow-x-auto p-4">
-      <h1 class="text-2xl font-bold">Mere</h1>
+      <h1 class="text-2xl font-bold mb-4">Mere</h1>
       <div class="join join-vertical w-full">
         <div class="collapse collapse-arrow join-item border border-base-300">
           <input type="radio" name="my-accordion-1" />
           <div class="collapse-title text-xl font-medium">
             Fravær
           </div>
-
           <div class="collapse-content text-center">
             <div class="flex flex-col md:flex-row justify-center items-start space-y-8 md:space-y-0 md:space-x-8">
-              <div>
+              <div class="w-full md:w-1/2">
                 <h2 class="text-lg font-semibold mb-4">Fysisk Fravær</h2>
                 {absenceData() && absenceData()["Samlet"] ? (
                   <div class="stats shadow">
@@ -187,8 +185,7 @@ function Settings() {
                   </div>
                 ) : <p>Loading absence data...</p>}
               </div>
-
-              <div>
+              <div class="w-full md:w-1/2">
                 <h2 class="text-lg font-semibold mb-4">Skriftligt Fravær</h2>
                 {absenceData() && absenceData()["Samlet"] && absenceData()["Samlet"].writing ? (
                   <div class="stats shadow">
@@ -209,7 +206,6 @@ function Settings() {
             <div class="relative w-full max-w-sm mx-auto pt-4 pb-4">
               <canvas id="myChart"></canvas>
             </div>
-
             <div>
               {absenceData() && (
                 <div class="stats shadow bg-base-200">
@@ -249,7 +245,7 @@ function Settings() {
           </div>
           <div class="collapse-content">
             {gradesData().grades.length > 0 ? (
-              <table class="table w-full table-compact table-fixed">
+              <table class="table table-xs sm:table-sm md:table-md lg:table-lg w-full table-compact table-fixed">
                 <thead>
                   <tr>
                     <th>Hold</th>
@@ -264,13 +260,16 @@ function Settings() {
                 <tbody>
                   {gradesData().grades.map((grade, index) => (
                     <tr key={index}>
-                      <td>{grade.team}</td>
+                      <td>
+                        {grade.team}
+                        <div style={{ opacity: 0.5 }}>{grade.first_standpoint?.weight || '-'}</div>
+                      </td>
                       <td>{grade.subject}</td>
-                      <td>{grade.first_standpoint?.grade || '-'}</td>
-                      <td>{grade.second_standpoint?.grade || '-'}</td>
-                      <td>{grade.final_year_grade?.grade || '-'}</td>
-                      <td>{grade.internal_exam?.grade || '-'}</td>
-                      <td>{grade.final_exam?.grade || '-'}</td>
+                      <td>{cleanGradeText(grade.first_standpoint?.grade) || '-'}</td>
+                      <td>{cleanGradeText(grade.second_standpoint?.grade) || '-'}</td>
+                      <td>{cleanGradeText(grade.final_year_grade?.grade) || '-'}</td>
+                      <td>{cleanGradeText(grade.internal_exam?.grade) || '-'}</td>
+                      <td>{cleanGradeText(grade.final_exam?.grade) || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -320,3 +319,8 @@ function Settings() {
 }
 
 export default Settings;
+
+// Helper function to clean grade text
+function cleanGradeText(text) {
+  return text?.replace(/vægt:\s*\d+(\.\d+)?/, '').trim();
+}

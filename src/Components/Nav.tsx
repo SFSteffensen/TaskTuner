@@ -11,9 +11,9 @@ function Nav() {
 
   return (
     isLoggedIn() ? (
-      <div class="btm-nav">
+      <div class="btm-nav left-0 right-0 bg-base-200 z-50">
         <button
-          onClick={() => Navigate('/')}
+          onMouseDown={() => Navigate('/')}
           class={pathname === '/' ? 'active' : ''} // Conditional class assignment
         >
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="29.7949" height="28.0957">
@@ -27,8 +27,8 @@ function Nav() {
         </button>
 
         <button
-          onClick={() => Navigate('/schedule')}
-          class={pathname === '/schedule' ? 'active' : ''} // Conditional class assignment
+          onMouseDown={() => Navigate('/schedule')}
+          class={pathname === '/schedule' ? 'active' : ''}
         >
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="25.3809" height="22.9785">
             <g>
@@ -41,7 +41,7 @@ function Nav() {
         </button>
 
         <button
-          onClick={() => Navigate('/assignment')}
+          onMouseDown={() => Navigate('/assignment')}
           class={pathname === '/assignment' ? 'active' : ''}
         >
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="21.3281" height="34.3262">
@@ -58,7 +58,7 @@ function Nav() {
         </button>
 
         <button
-          onClick={() => Navigate('/dm')}
+          onMouseDown={() => Navigate('/dm')}
           class={pathname === '/dm' ? 'active' : ''}
         >
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="29.9512" height="21.2012">
@@ -70,7 +70,7 @@ function Nav() {
           <span class="btm-nav-label">Inbox</span>
         </button>
 
-        <button onClick={() => Navigate('/settings')} class={pathname === '/settings' ? 'active' : ''}>
+        <button onMouseDown={() => Navigate('/settings')} class={pathname === '/settings' ? 'active' : ''}>
           <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="25.8008" height="25.459">
             <g>
               <rect height="25.459" opacity="0" width="25.8008" x="0" y="0" />
