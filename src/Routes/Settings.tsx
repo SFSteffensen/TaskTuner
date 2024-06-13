@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { createSignal, onMount } from 'solid-js';
+import { createEffect, createSignal, onMount } from 'solid-js';
 import useTheme from '../hooks/useTheme';
 import { useStore } from "../store";
 import Chart from 'chart.js/auto';
@@ -159,16 +159,17 @@ function Settings() {
 
   return (
     <div class="overflow-x-auto p-4">
-      <h1 class="text-2xl font-bold mb-4">Mere</h1>
+      <h1 class="text-2xl font-bold">Mere</h1>
       <div class="join join-vertical w-full">
         <div class="collapse collapse-arrow join-item border border-base-300">
           <input type="radio" name="my-accordion-1" />
           <div class="collapse-title text-xl font-medium">
             Fravær
           </div>
+
           <div class="collapse-content text-center">
             <div class="flex flex-col md:flex-row justify-center items-start space-y-8 md:space-y-0 md:space-x-8">
-              <div class="w-full md:w-1/2">
+              <div>
                 <h2 class="text-lg font-semibold mb-4">Fysisk Fravær</h2>
                 {absenceData() && absenceData()["Samlet"] ? (
                   <div class="stats shadow">
@@ -180,12 +181,13 @@ function Settings() {
                     <div class="stat bg-base-200">
                       <div class="stat-title">For Året</div>
                       <div class="stat-value">{absenceData()["Samlet"].for_the_year.procent}</div>
-                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].for_the_year.moduler} moduler</div>
+                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].for_the_year.moduler}</div>
                     </div>
                   </div>
                 ) : <p>Loading absence data...</p>}
               </div>
-              <div class="w-full md:w-1/2">
+
+              <div>
                 <h2 class="text-lg font-semibold mb-4">Skriftligt Fravær</h2>
                 {absenceData() && absenceData()["Samlet"] && absenceData()["Samlet"].writing ? (
                   <div class="stats shadow">
@@ -197,7 +199,7 @@ function Settings() {
                     <div class="stat bg-base-200">
                       <div class="stat-title">For Året</div>
                       <div class="stat-value">{absenceData()["Samlet"].writing.for_the_year_wrting.procent}</div>
-                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].writing.for_the_year_wrting.moduler} moduler</div>
+                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].writing.for_the_year_wrting.moduler}</div>
                     </div>
                   </div>
                 ) : <p>Loading written absence data...</p>}
@@ -206,6 +208,7 @@ function Settings() {
             <div class="relative w-full max-w-sm mx-auto pt-4 pb-4">
               <canvas id="myChart"></canvas>
             </div>
+
             <div>
               {absenceData() && (
                 <div class="stats shadow bg-base-200">
@@ -245,41 +248,51 @@ function Settings() {
           </div>
           <div class="collapse-content">
             {gradesData().grades.length > 0 ? (
-              <table class="table table-xs sm:table-sm md:table-md lg:table-lg w-full table-compact table-fixed">
-                <thead>
+              <table class="table table-xs md:table-sm lg:table-md xl:table-lg w-full table-compact table-fixed whitespace-normal">
+                <thead class='whitespace-normal'>
                   <tr>
-                    <th>Hold</th>
                     <th>Fag</th>
                     <th>1.standpunkt</th>
                     <th>2.standpunkt</th>
                     <th>Afsluttende års-/standpunktskarakter</th>
-                    <th>Intern prøve</th>
+                    <th class="hidden md:table-cell">Intern prøve</th>
                     <th>Eksamens-/årsprøvekarakter</th>
                   </tr>
                 </thead>
                 <tbody>
                   {gradesData().grades.map((grade, index) => (
                     <tr key={index}>
-                      <td>
-                        {grade.team}
-                        <div style={{ opacity: 0.5 }}>{grade.first_standpoint?.weight || '-'}</div>
-                      </td>
                       <td>{grade.subject}</td>
-                      <td>{cleanGradeText(grade.first_standpoint?.grade) || '-'}</td>
-                      <td>{cleanGradeText(grade.second_standpoint?.grade) || '-'}</td>
-                      <td>{cleanGradeText(grade.final_year_grade?.grade) || '-'}</td>
-                      <td>{cleanGradeText(grade.internal_exam?.grade) || '-'}</td>
-                      <td>{cleanGradeText(grade.final_exam?.grade) || '-'}</td>
+                      <td>
+                        {cleanGradeText(grade.first_standpoint?.grade) || '-'}
+                        {grade.first_standpoint?.weight && <div class="text-xs opacity-50">{grade.first_standpoint.weight}</div>}
+                      </td>
+                      <td>
+                        {cleanGradeText(grade.second_standpoint?.grade) || '-'}
+                        {grade.second_standpoint?.weight && <div class="text-xs opacity-50">{grade.second_standpoint.weight}</div>}
+                      </td>
+                      <td>
+                        {cleanGradeText(grade.final_year_grade?.grade) || '-'}
+                        {grade.final_year_grade?.weight && <div class="text-xs opacity-50">{grade.final_year_grade.weight}</div>}
+                      </td>
+                      <td class="hidden md:table-cell">
+                        {cleanGradeText(grade.internal_exam?.grade) || '-'}
+                        {grade.internal_exam?.weight && <div class="text-xs opacity-50">{grade.internal_exam.weight}</div>}
+                      </td>
+                      <td>
+                        {cleanGradeText(grade.final_exam?.grade) || '-'}
+                        {grade.final_exam?.weight && <div class="text-xs opacity-50">{grade.final_exam.weight}</div>}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colSpan="2">Gennemsnit</td>
+                    <td>Vægtet gennemsnit</td>
                     <td>{calculateAverage(gradesData().grades, 'first_standpoint')}</td>
                     <td>{calculateAverage(gradesData().grades, 'second_standpoint')}</td>
                     <td>{calculateAverage(gradesData().grades, 'final_year_grade')}</td>
-                    <td>{calculateAverage(gradesData().grades, 'internal_exam')}</td>
+                    <td class="hidden md:table-cell">{calculateAverage(gradesData().grades, 'internal_exam')}</td>
                     <td>{calculateAverage(gradesData().grades, 'final_exam')}</td>
                   </tr>
                 </tfoot>
@@ -319,6 +332,7 @@ function Settings() {
 }
 
 export default Settings;
+
 
 // Helper function to clean grade text
 function cleanGradeText(text) {
