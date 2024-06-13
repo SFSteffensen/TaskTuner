@@ -8,6 +8,7 @@ function Settings() {
   const { isLoggedIn } = useStore();
   const [theme, setTheme] = createSignal(localStorage.getItem('theme') || 'light');
   const [absenceData, setAbsenceData] = createSignal({});
+  const [gradesData, setGradesData] = createSignal({ grades: [], grade_notes: [] });
   const schoolId = localStorage.getItem('selectedSchoolId') || '';
 
   const changeTheme = (newTheme) => {
@@ -27,6 +28,16 @@ function Settings() {
     }
   }
 
+  async function fetchGrades() {
+    try {
+      const response = await invoke('get_grades', { schoolId: schoolId });
+      const data = JSON.parse(response);
+      setGradesData(data);
+    } catch (error) {
+      console.error('Failed to fetch grades:', error);
+    }
+  }
+
   function generateColors(count) {
     const backgroundColors = [];
     const borderColors = [];
@@ -43,7 +54,6 @@ function Settings() {
   }
 
   console.log(generateColors(5));
-
 
   function updateChart(data) {
     const ctx = document.getElementById('myChart').getContext('2d');
@@ -111,12 +121,39 @@ function Settings() {
     });
   }
 
+  function calculateAverage(grades, key) {
+    let totalWeight = 0;
+    let weightedSum = 0;
+    const logEntries = [];
 
+    grades.forEach((grade) => {
+      if (grade[key]) {
+        const { grade: gradeValue, weight } = grade[key];
+        const weightedGrade = parseFloat(gradeValue) * weight;
+        weightedSum += weightedGrade;
+        totalWeight += weight;
+        logEntries.push(`(${gradeValue} * ${weight})`);
+      }
+    });
+
+    const average = totalWeight > 0 ? (weightedSum / totalWeight) : '-';
+
+    if (totalWeight > 0) {
+      console.log(`Calculation for ${key}:`);
+      console.log(logEntries.join(' + '));
+      console.log(`Total Weight: ${totalWeight}`);
+      console.log(`Weighted Sum: ${weightedSum}`);
+      console.log(`Average: ${average}`);
+    }
+
+    return totalWeight > 0 ? average.toFixed(2) : '-';
+  }
 
   onMount(() => {
     if (isLoggedIn()) {
       document.documentElement.setAttribute('data-theme', theme());
       fetchAbsence();
+      fetchGrades();
     }
   });
 
@@ -133,7 +170,6 @@ function Settings() {
           <div class="collapse-content text-center">
             <div class="flex flex-col md:flex-row justify-center items-start space-y-8 md:space-y-0 md:space-x-8">
               <div>
-
                 <h2 class="text-lg font-semibold mb-4">Fysisk Fravær</h2>
                 {absenceData() && absenceData()["Samlet"] ? (
                   <div class="stats shadow">
@@ -145,12 +181,11 @@ function Settings() {
                     <div class="stat bg-base-200">
                       <div class="stat-title">For Året</div>
                       <div class="stat-value">{absenceData()["Samlet"].for_the_year.procent}</div>
-                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].for_the_year.moduler} moduler</div>
+                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].for_the_year.moduler}</div>
                     </div>
                   </div>
                 ) : <p>Loading absence data...</p>}
               </div>
-
 
               <div>
                 <h2 class="text-lg font-semibold mb-4">Skriftligt Fravær</h2>
@@ -164,7 +199,7 @@ function Settings() {
                     <div class="stat bg-base-200">
                       <div class="stat-title">For Året</div>
                       <div class="stat-value">{absenceData()["Samlet"].writing.for_the_year_wrting.procent}</div>
-                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].writing.for_the_year_wrting.moduler} moduler</div>
+                      <div class="stat-desc text-secondary">{absenceData()["Samlet"].writing.for_the_year_wrting.moduler}</div>
                     </div>
                   </div>
                 ) : <p>Loading written absence data...</p>}
@@ -173,7 +208,6 @@ function Settings() {
             <div class="relative w-full max-w-sm mx-auto pt-4 pb-4">
               <canvas id="myChart"></canvas>
             </div>
-
 
             <div>
               {absenceData() && (
@@ -194,9 +228,6 @@ function Settings() {
                 </div>
               )}
             </div>
-
-
-
           </div>
         </div>
 
@@ -216,7 +247,57 @@ function Settings() {
             Karakterer
           </div>
           <div class="collapse-content">
-            <p>Karaktere kommer senere</p>
+            {gradesData().grades.length > 0 ? (
+              <table class="table table-xs md:table-sm lg:table-md xl:table-lg w-full table-compact table-fixed whitespace-normal">
+                <thead class='whitespace-normal'>
+                  <tr>
+                    <th>Fag</th>
+                    <th>1.standpunkt</th>
+                    <th>2.standpunkt</th>
+                    <th>Afsluttende års-/standpunktskarakter</th>
+                    <th class="hidden md:table-cell">Intern prøve</th>
+                    <th>Eksamens-/årsprøvekarakter</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {gradesData().grades.map((grade, index) => (
+                    <tr key={index}>
+                      <td>{grade.subject}</td>
+                      <td>
+                        {cleanGradeText(grade.first_standpoint?.grade) || '-'}
+                        {grade.first_standpoint?.weight && <div class="text-xs opacity-50">{grade.first_standpoint.weight}</div>}
+                      </td>
+                      <td>
+                        {cleanGradeText(grade.second_standpoint?.grade) || '-'}
+                        {grade.second_standpoint?.weight && <div class="text-xs opacity-50">{grade.second_standpoint.weight}</div>}
+                      </td>
+                      <td>
+                        {cleanGradeText(grade.final_year_grade?.grade) || '-'}
+                        {grade.final_year_grade?.weight && <div class="text-xs opacity-50">{grade.final_year_grade.weight}</div>}
+                      </td>
+                      <td class="hidden md:table-cell">
+                        {cleanGradeText(grade.internal_exam?.grade) || '-'}
+                        {grade.internal_exam?.weight && <div class="text-xs opacity-50">{grade.internal_exam.weight}</div>}
+                      </td>
+                      <td>
+                        {cleanGradeText(grade.final_exam?.grade) || '-'}
+                        {grade.final_exam?.weight && <div class="text-xs opacity-50">{grade.final_exam.weight}</div>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td>Vægtet gennemsnit</td>
+                    <td>{calculateAverage(gradesData().grades, 'first_standpoint')}</td>
+                    <td>{calculateAverage(gradesData().grades, 'second_standpoint')}</td>
+                    <td>{calculateAverage(gradesData().grades, 'final_year_grade')}</td>
+                    <td class="hidden md:table-cell">{calculateAverage(gradesData().grades, 'internal_exam')}</td>
+                    <td>{calculateAverage(gradesData().grades, 'final_exam')}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            ) : <p>Loading grades data...</p>}
           </div>
         </div>
 
@@ -251,3 +332,9 @@ function Settings() {
 }
 
 export default Settings;
+
+
+// Helper function to clean grade text
+function cleanGradeText(text) {
+  return text?.replace(/vægt:\s*\d+(\.\d+)?/, '').trim();
+}

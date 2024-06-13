@@ -88,15 +88,15 @@ function Login() {
               value={searchTerm()}
               placeholder={selectedSchoolName()}
               onInput={(e) => setSearchTerm(e.currentTarget.value)}
-              onClick={() => setDropdownOpen(!dropdownOpen())}
+              onMouseDown={() => setDropdownOpen(!dropdownOpen())}
             />
             <ul
               class={`dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-10 absolute overflow-y-auto max-h-[200px] ${dropdownOpen() ? 'block' : 'hidden'}`}
-              onClick={(e) => e.stopPropagation()} // Prevent onBlur when clicking within the dropdown
+              onMouseDown={(e) => e.stopPropagation()} // Prevent onBlur when clicking within the dropdown
               tabIndex={0}
             >
               {filteredSchoolList().map(([id, name]) => (
-                <li key={id}><a onClick={() => {
+                <li key={id}><a onMouseDown={() => {
                   selectSchool(id, name);
                   setSearchTerm('');
                 }}>{name}</a></li>
@@ -105,7 +105,7 @@ function Login() {
           </div>
 
           <button class="btn btn-square"
-            onClick={fetchSchools}>
+            onMouseDown={fetchSchools}>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill='currentColor'
               viewBox="0 0 24 24">
               <path
@@ -143,7 +143,7 @@ function Login() {
             <button
               type="button"
               class="btn btn-primary btn-outline"
-              onClick={login}
+              onMouseDown={login}
               disabled={!username() || !password() || !selectedSchoolId()}>
               Login
             </button>

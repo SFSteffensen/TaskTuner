@@ -95,7 +95,7 @@ function Schedule() {
       <div class="mb-4 flex justify-center">
         <ul class="menu menu-horizontal bg-base-200 rounded-box">
           {Array.from({ length: 13 }, (_, i) => selectedWeek() - 6 + i).map(week => (
-            <li key={week} class={week === selectedWeek() ? 'active bg-base-300' : week === new Date().getWeekNumber() ? 'bg-accent' : ''} onClick={() => handleWeekChange(week)}>
+            <li key={week} class={week === selectedWeek() ? 'active bg-base-300' : week === new Date().getWeekNumber() ? 'bg-accent' : ''} onMouseDown={() => handleWeekChange(week)}>
               <a>Uge {week}</a>
             </li>
           ))}

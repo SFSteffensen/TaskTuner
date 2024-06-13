@@ -103,6 +103,32 @@ struct Message {
     message: String,
 }
 
+#[derive(Serialize, Deserialize)]
+struct Grade {
+    team: String,
+    subject: String,
+    first_standpoint: Option<GradeDetail>,
+    second_standpoint: Option<GradeDetail>,
+    final_year_grade: Option<GradeDetail>,
+    internal_exam: Option<GradeDetail>,
+    final_exam: Option<GradeDetail>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct GradeNote {
+    team: String,
+    grade_type: String,
+    grade: String,
+    date: String,
+    note: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct GradeDetail {
+    grade: String,
+    weight: f32,
+}
+
 #[tauri::command]
 pub fn get_schools() -> HashMap<String, String> {
     // Make a GET request to the iframe's source URL
@@ -628,5 +654,111 @@ fn time_until_due(deadline: &str) -> String {
             }
         }
         Err(_) => "Deadline overgået".to_string(), // Handle parsing error
+    }
+}
+
+fn clean_grade_text(text: &str) -> Option<GradeDetail> {
+    let cleaned_text = text.trim().to_string();
+    let weight = extract_weight_from_title(text).unwrap_or(1.0); // Default weight is 1.0
+    if cleaned_text.is_empty() {
+        None
+    } else {
+        Some(GradeDetail {
+            grade: cleaned_text,
+            weight,
+        })
+    }
+}
+
+fn extract_weight_from_title(title: &str) -> Option<f32> {
+    let re = Regex::new(r"Vægt:\s*([\d,]+)").unwrap();
+    if let Some(caps) = re.captures(title) {
+        caps.get(1)
+            .map(|m| m.as_str().replace(",", ".").parse().unwrap_or(1.0))
+    } else {
+        None
+    }
+}
+
+fn scrape_grades(school_id: &str) -> Result<(Vec<Grade>, Vec<GradeNote>), Box<dyn Error>> {
+    let client = CLIENT_MANAGER
+        .get_client()
+        .ok_or("Client not initialized")?;
+    let url = format!(
+        "https://www.lectio.dk/lectio/{}/grades/grade_report.aspx",
+        school_id
+    );
+    let res = client.get(&url).send()?;
+    if res.status() != 200 {
+        return Err("Failed to fetch grades page".into());
+    }
+
+    let body = res.text()?;
+    let document = Html::parse_document(&body);
+
+    let grade_selector =
+        Selector::parse("#s_m_Content_Content_karakterView_KarakterGV tr").unwrap();
+    let grade_note_selector =
+        Selector::parse("#s_m_Content_Content_karakterView_KarakterNoterGrid tr").unwrap();
+
+    let mut grades = Vec::new();
+    let mut grade_notes = Vec::new();
+
+    for element in document.select(&grade_selector).skip(1) {
+        let columns: Vec<_> = element.select(&Selector::parse("td").unwrap()).collect();
+        if columns.len() >= 7 {
+            grades.push(Grade {
+                team: columns[0].text().collect::<String>(),
+                subject: columns[1].text().collect::<String>(),
+                first_standpoint: extract_grade_detail(&columns[2]),
+                second_standpoint: extract_grade_detail(&columns[3]),
+                final_year_grade: extract_grade_detail(&columns[4]),
+                internal_exam: extract_grade_detail(&columns[5]),
+                final_exam: extract_grade_detail(&columns[6]),
+            });
+        }
+    }
+
+    for element in document.select(&grade_note_selector).skip(1) {
+        let columns: Vec<_> = element.select(&Selector::parse("td").unwrap()).collect();
+        if columns.len() >= 5 {
+            grade_notes.push(GradeNote {
+                team: columns[0].text().collect::<String>(),
+                grade_type: columns[1].text().collect::<String>(),
+                grade: clean_grade_text(&columns[2].text().collect::<String>())
+                    .unwrap()
+                    .grade,
+                date: columns[3].text().collect::<String>(),
+                note: columns[4].text().collect::<String>(),
+            });
+        }
+    }
+
+    Ok((grades, grade_notes))
+}
+
+fn extract_grade_detail(column: &scraper::element_ref::ElementRef) -> Option<GradeDetail> {
+    let div_selector = Selector::parse("div").unwrap();
+    if let Some(div) = column.select(&div_selector).next() {
+        let grade = div.text().collect::<String>().trim().to_string();
+        let title = div.value().attr("title").unwrap_or("");
+        let weight = extract_weight_from_title(title).unwrap_or(1.0);
+        Some(GradeDetail { grade, weight })
+    } else {
+        None
+    }
+}
+
+#[tauri::command]
+pub fn get_grades(school_id: &str) -> String {
+    match scrape_grades(school_id) {
+        Ok((grades, grade_notes)) => {
+            let data = json!({
+                "grades": grades,
+                "grade_notes": grade_notes
+            });
+            serde_json::to_string(&data).unwrap()
+        }
+        Err(e) => format!("Error: {}", e),
     }
 }
