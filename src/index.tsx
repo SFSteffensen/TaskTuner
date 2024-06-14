@@ -1,40 +1,40 @@
-import { render } from "solid-js/web";
-import { Router, Route } from "@solidjs/router";
+import { render } from 'solid-js/web';
+import { Router, Route } from '@solidjs/router';
 
-import "./styles.css";
+import './styles.css';
 
 // Routes
-import Login from "./Routes/Login.tsx";
-import DashBoard from "./Routes/DashBoard.tsx";
-import NotFound from "./Routes/404.tsx";
+import Login from './Routes/Login.tsx';
+import DashBoard from './Routes/DashBoard.tsx';
+import NotFound from './Routes/404.tsx';
 
 // Components
-import Nav from "./Components/Nav.tsx";
-import Schedule from "./Routes/Schedule.tsx";
-import Settings from "./Routes/Settings.tsx";
-import DM from "./Routes/DM.tsx";
-import Assignment from "./Routes/Assignments.tsx";
+import Nav from './Components/Nav.tsx';
+import Schedule from './Routes/Schedule.tsx';
+import Settings from './Routes/Settings.tsx';
+import DM from './Routes/DM.tsx';
+import Assignment from './Routes/Assignments.tsx';
 
 const App = (props) => {
-  return (
-    <>
-      <Nav />
-      {props.children}
-    </>
-  );
+    return (
+        <>
+            <Nav />
+            {props.children}
+        </>
+    );
 };
 
 render(
-  () => (
-    <Router root={App}>
-      <Route path={"/"} component={() => <DashBoard />} />
-      <Route path={"/schedule"} component={() => <Schedule />} />
-      <Route path={"/login"} component={() => <Login />} />
-      <Route path={"/settings"} component={() => <Settings />} />
-      <Route path={"/dm"} component={DM} />
-      <Route path={"/assignment"} component={Assignment} />
-      <Route path={"*404"} component={NotFound} />
-    </Router>
-  ),
-  document.getElementById("root") as HTMLElement
+    () => (
+        <Router root={App}>
+            <Route path={'/'} component={() => <DashBoard />} />
+            <Route path={'/schedule'} component={() => <Schedule />} />
+            <Route path={'/login'} component={() => <Login />} />
+            <Route path={'/settings'} component={() => <Settings />} />
+            <Route path={'/dm'} component={DM} />
+            <Route path={'/assignment'} component={Assignment} />
+            <Route path={'*404'} component={NotFound} />
+        </Router>
+    ),
+    document.getElementById('root') as HTMLElement
 );
