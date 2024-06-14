@@ -36,5 +36,5 @@ render(
       <Route path={"*404"} component={NotFound} />
     </Router>
   ),
-  document.getElementById("root") as HTMLElement,
+  document.getElementById("root") as HTMLElement
 );

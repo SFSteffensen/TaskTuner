@@ -5,7 +5,7 @@ import fuzzysort from "fuzzysort"; // Import the fuzzysort library
 
 function Login() {
   const [schoolList, setSchoolList] = createSignal<Map<string, string>>(
-    new Map(),
+    new Map()
   );
   const [selectedSchoolId, setSelectedSchoolId] = createSignal("");
   const [selectedSchoolName, setSelectedSchoolName] =
@@ -51,7 +51,7 @@ function Login() {
         window.location.href = "/";
       } else {
         setLoginStatus(
-          responseData.message || "Login failed. Please try again.",
+          responseData.message || "Login failed. Please try again."
         );
       }
     } catch (error) {
@@ -66,7 +66,7 @@ function Login() {
       Array.from(schoolList()).map(([id, name]) => ({ id, name })),
       {
         key: "name",
-      },
+      }
     );
     return results.map((result) => [result.obj.id, result.obj.name]);
   }

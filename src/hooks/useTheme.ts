@@ -2,7 +2,7 @@ import { createSignal, onCleanup } from "solid-js";
 
 function useTheme(defaultTheme = "light") {
   const [theme, setTheme] = createSignal(
-    localStorage.getItem("theme") || defaultTheme,
+    localStorage.getItem("theme") || defaultTheme
   );
 
   // Function to change theme

@@ -7,7 +7,7 @@ import Chart from "chart.js/auto";
 function Settings() {
   const { isLoggedIn } = useStore();
   const [theme, setTheme] = createSignal(
-    localStorage.getItem("theme") || "light",
+    localStorage.getItem("theme") || "light"
   );
   const [absenceData, setAbsenceData] = createSignal({});
   const [gradesData, setGradesData] = createSignal({
@@ -74,7 +74,7 @@ function Settings() {
         opgjortData.push(parseFloat(details.opgjort.procent.replace("%", "")));
         opgjortModules.push(details.opgjort.moduler);
         forAaretData.push(
-          parseFloat(details.for_the_year.procent.replace("%", "")),
+          parseFloat(details.for_the_year.procent.replace("%", ""))
         );
         forAaretModules.push(details.for_the_year.moduler);
       }
@@ -96,7 +96,7 @@ function Settings() {
           label: "For Året",
           data: forAaretData,
           backgroundColor: backgroundColors.map((color) =>
-            color.replace("0.7", "0.85"),
+            color.replace("0.7", "0.85")
           ), // Slightly darker for contrast
           borderColor: borderColors,
           borderWidth: 1,
@@ -358,19 +358,19 @@ function Settings() {
                     <td>
                       {calculateAverage(
                         gradesData().grades,
-                        "first_standpoint",
+                        "first_standpoint"
                       )}
                     </td>
                     <td>
                       {calculateAverage(
                         gradesData().grades,
-                        "second_standpoint",
+                        "second_standpoint"
                       )}
                     </td>
                     <td>
                       {calculateAverage(
                         gradesData().grades,
-                        "final_year_grade",
+                        "final_year_grade"
                       )}
                     </td>
                     <td class="hidden md:table-cell">

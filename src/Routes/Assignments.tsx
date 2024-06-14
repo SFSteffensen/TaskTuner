@@ -35,7 +35,7 @@ function Assignments() {
     return dateStr.replace(
       regex,
       (match, day, month, year) =>
-        `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`,
+        `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`
     );
   }
 

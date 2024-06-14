@@ -26,28 +26,28 @@ function DashBoard() {
       /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
     replacedText = replacedText.replace(
       urlRegex,
-      '<a href="$1" target="_blank" class="link link-primary">$1</a>',
+      '<a href="$1" target="_blank" class="link link-primary">$1</a>'
     );
 
     // URLs starting with "www." (without // before it, or it'd re-link the ones done above).
     const pseudoUrlRegex = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
     replacedText = replacedText.replace(
       pseudoUrlRegex,
-      '$1<a href="http://$2" target="_blank" class="link link-primary">$2</a>',
+      '$1<a href="http://$2" target="_blank" class="link link-primary">$2</a>'
     );
 
     // Change email addresses to mailto:: links.
     const emailAddressRegex = /(\S+@\S+\.\S+)/gim;
     replacedText = replacedText.replace(
       emailAddressRegex,
-      '<a href="mailto:$1" class="link link-primary">$1</a>',
+      '<a href="mailto:$1" class="link link-primary">$1</a>'
     );
 
     // Danish phone numbers as continuous 8 digits or separated into two blocks of four
     const phoneNumberRegex = /(\b\d{4}[\s-]?\d{4}\b)/gim;
     replacedText = replacedText.replace(
       phoneNumberRegex,
-      '<a href="tel:$1" class="link link-primary">$1</a>',
+      '<a href="tel:$1" class="link link-primary">$1</a>'
     );
 
     return replacedText;

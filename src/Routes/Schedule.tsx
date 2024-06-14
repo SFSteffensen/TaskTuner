@@ -10,7 +10,7 @@ function Schedule() {
   const [scheduleData, setScheduleData] = createSignal({});
   const [theme] = useTheme();
   const [selectedWeek, setSelectedWeek] = createSignal(
-    new Date().getWeekNumber(),
+    new Date().getWeekNumber()
   );
   const days = ["ma", "ti", "on", "to", "fr"];
 
@@ -114,7 +114,7 @@ function Schedule() {
               >
                 <a>Uge {week}</a>
               </li>
-            ),
+            )
           )}
         </ul>
       </div>
@@ -139,7 +139,7 @@ function Schedule() {
                     {scheduleData()[time][day] ? (
                       <div
                         class={determineCardClass(
-                          scheduleData()[time][day].status,
+                          scheduleData()[time][day].status
                         )}
                       >
                         <div class="card-body p-2">
