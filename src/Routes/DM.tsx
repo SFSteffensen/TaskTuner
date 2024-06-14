@@ -1,8 +1,8 @@
-import { createSignal, onMount } from 'solid-js';
+import { createSignal, onMount } from "solid-js";
 import { useLocation } from "@solidjs/router";
 import { useStore } from "../store";
-import { invoke } from '@tauri-apps/api/core';
-import useTheme from '../hooks/useTheme';
+import { invoke } from "@tauri-apps/api/core";
+import useTheme from "../hooks/useTheme";
 
 function DM() {
   const { isLoggedIn } = useStore();
@@ -14,14 +14,11 @@ function DM() {
     window.location.href = "/login?redirect=" + pathname;
   }
 
-
   onMount(() => {
     if (isLoggedIn()) {
-      document.documentElement.setAttribute('data-theme', theme());
+      document.documentElement.setAttribute("data-theme", theme());
     }
   });
-
-
 
   return (
     <div>

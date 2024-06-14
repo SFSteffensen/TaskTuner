@@ -1,17 +1,19 @@
-import { createEffect, createSignal } from 'solid-js';
+import { createEffect, createSignal } from "solid-js";
 
 // Initialize isLoggedIn from localStorage
-const [isLoggedIn, setIsLoggedIn] = createSignal(Boolean(localStorage.getItem('isLoggedIn')));
+const [isLoggedIn, setIsLoggedIn] = createSignal(
+  Boolean(localStorage.getItem("isLoggedIn")),
+);
 
 // Update localStorage whenever isLoggedIn changes
 
 createEffect(() => {
-    localStorage.setItem('isLoggedIn', String(isLoggedIn()));
+  localStorage.setItem("isLoggedIn", String(isLoggedIn()));
 });
 
 export function useStore() {
-    return {
-        isLoggedIn,
-        setIsLoggedIn
-    };
+  return {
+    isLoggedIn,
+    setIsLoggedIn,
+  };
 }
