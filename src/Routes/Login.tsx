@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { createEffect, createSignal, onMount } from 'solid-js';
 import useTheme from '../hooks/useTheme';
 import fuzzysort from 'fuzzysort'; // Import the fuzzysort library
+import { Store } from '@tauri-apps/plugin-store';
 
 function Login() {
   const [schoolList, setSchoolList] = createSignal<Map<string, string>>(
@@ -45,18 +46,42 @@ function Login() {
       const responseData = JSON.parse(response);
 
       if (responseData.status === 'success') {
+        // Store credentials on successful login
+        const store = new Store('credentials.bin');
+        await store.set('credentials', {
+          schoolId: selectedSchoolId(),
+          username: username(),
+          password: password(),
+        });
+        await store.save();
+
         setLoginStatus('Login Successful!');
         window.location.href = '/';
       } else {
-        setLoginStatus(
-          responseData.message || 'Login failed. Please try again.'
-        );
+        setLoginStatus(responseData.message || 'Login failed. Please try again.');
       }
     } catch (error) {
       console.error('Login error:', error);
       setLoginStatus('An unexpected error occurred. Please try again.');
     }
   }
+
+  async function checkStoredCredentials() {
+    const store = new Store('credentials.bin');
+    const credentials = await store.get('credentials');
+
+    if (credentials) {
+      const { schoolId, username, password } = credentials;
+      setSelectedSchoolId(schoolId);
+      setUsername(username);
+      setPassword(password);
+
+
+      await login();
+    }
+  }
+
+  checkStoredCredentials()
 
   function filteredSchoolList() {
     const results = fuzzysort.go(

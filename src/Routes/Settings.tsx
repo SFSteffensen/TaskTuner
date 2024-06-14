@@ -7,6 +7,7 @@ function Settings() {
   const [theme, setTheme] = createSignal(
     localStorage.getItem('theme') || 'light'
   );
+
   const [absenceData, setAbsenceData] = createSignal({});
   const [gradesData, setGradesData] = createSignal({
     grades: [],
