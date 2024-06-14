@@ -157,6 +157,11 @@ pub fn get_schools() -> HashMap<String, String> {
 }
 
 #[tauri::command]
+pub fn is_client_initialized() -> bool {
+    CLIENT_MANAGER.get_client().is_some()
+}
+
+#[tauri::command]
 pub fn login(school_id: &str, username: &str, password: &str) -> String {
     match attempt_login(school_id, username, password) {
         Ok(client) => {

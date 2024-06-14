@@ -1,7 +1,8 @@
 mod scraper;
 
 use scraper::{
-    get_absence, get_assignments, get_dashboard, get_grades, get_schedule, get_schools, login,
+    get_absence, get_assignments, get_dashboard, get_grades, get_schedule, get_schools,
+    is_client_initialized, login,
 };
 
 #[tauri::command]
@@ -16,6 +17,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
             greet,
+            is_client_initialized,
             get_schools,
             login,
             get_schedule,
