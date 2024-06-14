@@ -181,7 +181,7 @@ function Settings() {
   return (
     <div class="overflow-x-auto p-4">
       <h1 class="text-2xl font-bold">Mere</h1>
-      <div class="join join-vertical w-full">
+      <div class="join join-vertical w-full pb-16">
         <div class="collapse collapse-arrow join-item border border-base-300">
           <input type="radio" name="my-accordion-1" />
           <div class="collapse-title text-xl font-medium">Fravær</div>
@@ -367,12 +367,12 @@ function Settings() {
                     <th>1.standpunkt</th>
                     <th>2.standpunkt</th>
                     <th>
-                      Afsluttende års-/standpunktskarakter
+                      Årskarakter
                     </th>
                     <th class="hidden md:table-cell">
                       Intern prøve
                     </th>
-                    <th>Eksamens-/årsprøvekarakter</th>
+                    <th>Eksamens-/Årsprøvekarakter</th>
                   </tr>
                 </thead>
                 <tbody>

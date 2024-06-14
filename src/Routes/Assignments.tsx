@@ -61,7 +61,7 @@ function Assignments() {
   };
 
   return (
-    <div class="overflow-x-auto p-4">
+    <div class="overflow-x-auto p-4 pb-16">
       <h1 class="text-2xl font-bold mb-4">Assignments</h1>
       <div class="flex justify-center gap-4 mb-4">
         {' '}

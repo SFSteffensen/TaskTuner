@@ -65,7 +65,7 @@ function DashBoard() {
 
   return (
     <div>
-      <div class="p-4">
+      <div class="p-4 pb-16">
         <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
         <div class="bg-base-200 p-4 rounded-xl shadow">
           <div innerHTML={dashboardData()} />
