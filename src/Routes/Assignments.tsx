@@ -32,38 +32,52 @@ function Assignments() {
 
   function formatDateString(dateStr) {
     const regex = /(\d{1,2})\/(\d{1,2})-(\d{4})/;
-    return dateStr.replace(regex, (match, day, month, year) => `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`);
+    return dateStr.replace(
+      regex,
+      (match, day, month, year) =>
+        `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`
+    );
   }
 
   const filteredAssignments = () => {
-    return assignments().filter((assignment) => {
-      return filter() === 'Both' || assignment.status === filter();
-    }).sort((a, b) => {
-      switch (sortBy()) {
-        case 'student_time':
-          return b.student_time - a.student_time; // Already a float, no need to parse
-        case 'urgency':
-          return b.urgency - a.urgency; // Higher urgency first
-        case 'deadline':
-          const dateA = parseEuropeanDate(a.deadline);
-          const dateB = parseEuropeanDate(b.deadline);
-          return dateA - dateB;
-        default:
-          return 0;
-      }
-    });
+    return assignments()
+      .filter((assignment) => {
+        return filter() === 'Both' || assignment.status === filter();
+      })
+      .sort((a, b) => {
+        switch (sortBy()) {
+          case 'student_time':
+            return b.student_time - a.student_time; // Already a float, no need to parse
+          case 'urgency':
+            return b.urgency - a.urgency; // Higher urgency first
+          case 'deadline':
+            const dateA = parseEuropeanDate(a.deadline);
+            const dateB = parseEuropeanDate(b.deadline);
+            return dateA - dateB;
+          default:
+            return 0;
+        }
+      });
   };
 
   return (
-    <div class="overflow-x-auto p-4">
+    <div class="overflow-x-auto p-4 pb-16">
       <h1 class="text-2xl font-bold mb-4">Assignments</h1>
-      <div class="flex justify-center gap-4 mb-4"> {/* Centering selects horizontally */}
-        <select class='select select-bordered' onInput={(e) => setFilter(e.currentTarget.value)}>
+      <div class="flex justify-center gap-4 mb-4">
+        {' '}
+        {/* Centering selects horizontally */}
+        <select
+          class="select select-bordered"
+          onInput={(e) => setFilter(e.currentTarget.value)}
+        >
           <option value="Venter">Venter</option>
           <option value="Afleveret">Afleveret</option>
           <option value="Both">Both</option>
         </select>
-        <select class='select select-bordered' onInput={(e) => setSortBy(e.currentTarget.value)}>
+        <select
+          class="select select-bordered"
+          onInput={(e) => setSortBy(e.currentTarget.value)}
+        >
           <option value="deadline">Afleveringsfrist</option>
           <option value="student_time">Elevtimer</option>
           <option value="urgency">Haster Score</option>
@@ -74,27 +88,42 @@ function Assignments() {
           <thead>
             <tr>
               <th>
-                <div class="tooltip tooltip-right" data-tip="Opgavens Navn">
+                <div
+                  class="tooltip tooltip-right"
+                  data-tip="Opgavens Navn"
+                >
                   Titel
                 </div>
               </th>
               <th>
-                <div class="tooltip" data-tip="Hvornår Opgaven skal afleveres">
+                <div
+                  class="tooltip"
+                  data-tip="Hvornår Opgaven skal afleveres"
+                >
                   Afleveringsfrist
                 </div>
               </th>
               <th>
-                <div class="tooltip" data-tip="Mængden af Elevtimer opgaven tæller for">
+                <div
+                  class="tooltip"
+                  data-tip="Mængden af Elevtimer opgaven tæller for"
+                >
                   Elevtimer
                 </div>
               </th>
               <th>
-                <div class="tooltip" data-tip="Er opgaven afleveret?">
+                <div
+                  class="tooltip"
+                  data-tip="Er opgaven afleveret?"
+                >
                   Status
                 </div>
               </th>
               <th>
-                <div class="tooltip tooltip-left" data-tip="Hvor Meget du bør prioritere opgaven">
+                <div
+                  class="tooltip tooltip-left"
+                  data-tip="Hvor Meget du bør prioritere opgaven"
+                >
                   Haster Score
                 </div>
               </th>
@@ -107,7 +136,9 @@ function Assignments() {
                 <td>{formatDateString(assignment.deadline)}</td>
                 <td>{assignment.student_time.toFixed(2)}</td>
                 <td>{assignment.status}</td>
-                <td>{(assignment.urgency * 1000.0).toFixed(2)}</td>
+                <td>
+                  {(assignment.urgency * 1000.0).toFixed(2)}
+                </td>
               </tr>
             ))}
           </tbody>
