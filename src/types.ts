@@ -10,3 +10,6 @@ type Class = {
     resources: string;
     notes: string;
 };
+
+
+type ScheduleData = Record<string, Record<string, Class | null>>;

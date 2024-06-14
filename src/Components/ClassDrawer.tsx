@@ -6,7 +6,7 @@ interface ClassModalProps {
     class?: Class;
 }
 
-function ClassModal(props: ClassModalProps) {
+function ClassDrawer(props: ClassModalProps) {
     const [translateX, setTranslateX] = createSignal(props.show ? 'translate-x-0' : 'translate-x-full');
     const [shouldRender, setShouldRender] = createSignal(props.show);
 
@@ -25,22 +25,25 @@ function ClassModal(props: ClassModalProps) {
     onCleanup(() => clearTimeout(1));
 
     return (
-        <div class={`fixed z-10 inset-0 overflow-y-auto flex justify-end transition-transform duration-500`}>
+        <div class={`fixed z-10 inset-0 overflow-y-auto flex justify-end`}>
             <div
-                class={`bg-white w-1/3 h-full overflow-auto transform transition-transform duration-500 ${translateX()}`}>
-                <div class="p-6 relative"> {/* Add relative here */}
+                class={`card bg-base-100 shadow-xl transform transition-transform duration-500 ${translateX()}`}>
+                <div class="p-6">
                     <button
-                        class="absolute top-0 left-0 btn btn-square m-2 "
+                        class="btn btn-primary btn-sm m-2 "
                         onClick={props.onClose}>
-                        Luk
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
                     </button>
-                    <h2 class="text-lg leading-6 font-medium text-gray-900 mt-8"> {/* Add mt-8 to give space for the button */}
+                    <h2 class="text-lg leading-6 font-medium  mt-8"> {/* Add mt-8 to give space for the button */}
                         {props.class?.class_name}
                     </h2>
                     <p class="mt-2 text-sm text-gray-500">
                         {props.class?.teacher}
                     </p>
-                    {/* ... rest of your class information ... */}
                     <p>Status: {props.class?.status}</p>
                     <p>Class Name: {props.class?.class_name}</p>
                     <p>Teacher: {props.class?.teacher}</p>
@@ -57,4 +60,4 @@ function ClassModal(props: ClassModalProps) {
     );
 }
 
-export default ClassModal;
+export default ClassDrawer;

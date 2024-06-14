@@ -8,7 +8,7 @@ function Schedule() {
         <DesktopSchedule />
       </div>
       <div class="lg:hidden">
-        <MobileSchedule />
+          <MobileSchedule/>
       </div>
     </div>
   );
