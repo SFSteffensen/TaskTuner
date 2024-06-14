@@ -1,24 +1,17 @@
-import { createSignal, onMount } from 'solid-js';
-import useTheme from '../hooks/useTheme';
+import { createSignal } from 'solid-js';
 import ScheduleCard from "./ScheduleCard.tsx";
 import useScheduleData from "../hooks/useScheduleData.ts";
+import { DAY_NAMES, DAYS, WEEKS } from "../Util/constants.ts";
 
 function MobileSchedule() {
     const {scheduleData, selectedWeek, handleWeekChange} = useScheduleData();
-    const [theme] = useTheme();
-    const [selectedDay, setSelectedDay] = createSignal('ma');
-    const days = ['ma', 'ti', 'on', 'to', 'fr'];
-    const dayNames = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag'];
-    const weeks = Array.from({length: 52}, (_, i) => i + 1); // Weeks from 1 to 52
+    const [selectedDay, setSelectedDay] = createSignal<Day>('ma');
 
 
-    function handleDayChange(newDay) {
+    function handleDayChange(newDay: Day) {
         setSelectedDay(newDay);
     }
 
-    onMount(() => {
-        document.documentElement.setAttribute('data-theme', theme());
-    });
 
     return (
         <div class="overflow-x-auto p-4">
@@ -29,7 +22,7 @@ function MobileSchedule() {
                     value={selectedWeek()}
                     onInput={(e) => handleWeekChange(parseInt(e.currentTarget.value))}
                 >
-                    {weeks.map((week) => (
+                    {WEEKS.map((week) => (
                         <option value={week} key={week}>
                             {week}
                         </option>
@@ -38,14 +31,14 @@ function MobileSchedule() {
             </h1>
             <div class="mb-4 flex justify-center">
                 <ul class="menu menu-horizontal bg-base-200 rounded-box lg:hidden">
-                    {days.map((day, index) => (
+                    {DAYS.map((day, index) => (
                         <li
                             key={day}
                             class={day === selectedDay() ? 'active bg-base-300' : ''}
-                            onMouseDown={() => handleDayChange(day)}
+                            onMouseDown={() => handleDayChange(day as Day)}
                         >
                             <a>
-                                {dayNames[index]}
+                                {DAY_NAMES[index]}
                             </a>
                         </li>
                     ))}

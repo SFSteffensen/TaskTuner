@@ -13,3 +13,6 @@ type Class = {
 
 
 type ScheduleData = Record<string, Record<string, Class | null>>;
+
+
+type Day = 'ma' | 'ti' | 'on' | 'to' | 'fr';

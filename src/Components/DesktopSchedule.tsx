@@ -1,20 +1,12 @@
-import { onMount } from 'solid-js';
-import useTheme from '../hooks/useTheme';
 import useScheduleData from '../hooks/useScheduleData';
 import ScheduleCard from "./ScheduleCard.tsx";
 import { getWeekNumber } from "../Util/getWeekNumber.ts";
+import { DAY_NAMES, DAYS } from "../Util/constants.ts";
 
 function DesktopSchedule() {
-    const [theme] = useTheme();
-    const days = ['ma', 'ti', 'on', 'to', 'fr'];
-    const dayNames = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag'];
 
     const {scheduleData, selectedWeek, handleWeekChange} = useScheduleData();
 
-
-    onMount(() => {
-        document.documentElement.setAttribute('data-theme', theme());
-    });
 
     return (
         <div class="overflow-x-auto p-4">
@@ -37,8 +29,8 @@ function DesktopSchedule() {
                     <thead>
                     <tr>
                         <th class="w-16">Tid</th>
-                        {days.map((day) => (
-                            <th key={day}>{dayNames[days.indexOf(day)]}</th>
+                        {DAYS.map((day) => (
+                            <th key={day}>{DAY_NAMES[DAYS.indexOf(day)]}</th>
                         ))}
                     </tr>
                     </thead>
@@ -46,7 +38,7 @@ function DesktopSchedule() {
                     {Object.keys(scheduleData()).map((time) => (
                         <tr key={time}>
                             <td>{time}</td>
-                            {days.map((day) => (
+                            {DAYS.map((day) => (
                                 <td key={day}>
                                     {scheduleData()[time][day] ? (
                                         <ScheduleCard
