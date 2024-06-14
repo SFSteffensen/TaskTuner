@@ -167,7 +167,7 @@ function Settings() {
             Fravær
           </div>
 
-          <div class="collapse-content text-center">
+          <div class="collapse-content text-center flex flex-col items-center">
             <div class="flex flex-col md:flex-row justify-center items-start space-y-8 md:space-y-0 md:space-x-8">
               <div>
                 <h2 class="text-lg font-semibold mb-4">Fysisk Fravær</h2>
@@ -187,7 +187,7 @@ function Settings() {
                 ) : <p>Loading absence data...</p>}
               </div>
 
-              <div>
+              <div class='flex flex-col items-center'>
                 <h2 class="text-lg font-semibold mb-4">Skriftligt Fravær</h2>
                 {absenceData() && absenceData()["Samlet"] && absenceData()["Samlet"].writing ? (
                   <div class="stats shadow">
@@ -205,15 +205,15 @@ function Settings() {
                 ) : <p>Loading written absence data...</p>}
               </div>
             </div>
-            <div class="relative w-full max-w-sm mx-auto pt-4 pb-4">
+            <div class="relative lg:w-full lg:max-w-sm xl:w-full xl:max-w-sm mx-auto pt-4 pb-4 flex flex-col items-center">
               <canvas id="myChart"></canvas>
             </div>
 
-            <div>
+            <div class='hidden md:block md:content-center'>
               {absenceData() && (
                 <div class="stats shadow bg-base-200">
                   {Object.entries(absenceData()).map(([team, details]) => {
-                    if (team !== "Samlet") { // Check to exclude 'Samlet'
+                    if (team !== "Samlet") {
                       return (
                         <div class="stat place-items-center" key={team}>
                           <div class="stat-title">{team}</div>
