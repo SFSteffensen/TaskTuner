@@ -7,11 +7,9 @@ function MobileSchedule() {
     const {scheduleData, selectedWeek, handleWeekChange} = useScheduleData();
     const [selectedDay, setSelectedDay] = createSignal<Day>('ma');
 
-
     function handleDayChange(newDay: Day) {
         setSelectedDay(newDay);
     }
-
 
     return (
         <div class="overflow-x-auto p-4">

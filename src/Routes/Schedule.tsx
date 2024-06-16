@@ -10,6 +10,7 @@ function Schedule() {
         document.documentElement.setAttribute('data-theme', theme());
     });
 
+
     return (
         <div class='pb-16'>
             <div class="hidden lg:block">

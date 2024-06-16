@@ -1,28 +1,32 @@
-import { createSignal, onCleanup } from 'solid-js';
+import { createEffect, createSignal } from 'solid-js';
 
 interface ClassModalProps {
-    show: boolean;
-    onClose: () => void;
+    initialShow: boolean;
     class?: Class;
+    setModalOpen: (value: boolean) => void;
 }
 
+const TRANSLATE_X_FULL = 'translate-x-full';
+const TRANSLATE_X_ZERO = 'translate-x-0';
+
 function ClassDrawer(props: ClassModalProps) {
-    const [translateX, setTranslateX] = createSignal(props.show ? 'translate-x-0' : 'translate-x-full');
-    const [shouldRender, setShouldRender] = createSignal(props.show);
+    const [isModalOpen, setModalOpen] = createSignal(props.initialShow);
+    const [translateX, setTranslateX] = createSignal(isModalOpen() ? TRANSLATE_X_ZERO : TRANSLATE_X_FULL);
 
-    if (props.show) {
-        setTranslateX('translate-x-full');
-        setShouldRender(true);
-        setTimeout(() => setTranslateX('translate-x-0'), 0);
-    } else {
-        setTranslateX('translate-x-0');
-        setTimeout(() => {
-            setTranslateX('translate-x-full');
-            setTimeout(() => setShouldRender(false), 500);
-        }, 0);
-    }
+    createEffect(() => {
+        if (isModalOpen()) {
+            setTranslateX(TRANSLATE_X_FULL);
+            setTimeout(() => setTranslateX(TRANSLATE_X_ZERO), 0);
+        } else {
+            setTranslateX(TRANSLATE_X_FULL);
+            setTimeout(() => setTranslateX(TRANSLATE_X_ZERO), 300); // Adjust this to match the duration of your CSS transition
+        }
+    });
 
-    onCleanup(() => clearTimeout(1));
+    const toggleModal = () => {
+        setModalOpen(false)
+        setTimeout(() => props.setModalOpen(false), 300);
+    };
 
     return (
         <div class={`fixed z-10 inset-0 overflow-y-auto flex justify-end`}>
@@ -31,14 +35,14 @@ function ClassDrawer(props: ClassModalProps) {
                 <div class="p-6">
                     <button
                         class="btn btn-primary btn-sm m-2 "
-                        onClick={props.onClose}>
+                        onClick={toggleModal}>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                              stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
-                    <h2 class="text-lg leading-6 font-medium  mt-8"> {/* Add mt-8 to give space for the button */}
+                    <h2 class="text-lg leading-6 font-medium  mt-8">
                         {props.class?.class_name}
                     </h2>
                     <p class="mt-2 text-sm text-gray-500">

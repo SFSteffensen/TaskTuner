@@ -3,21 +3,32 @@ import ClassDrawer from "./ClassDrawer.tsx";
 
 
 interface ScheduleCardProps {
-    scheduled_class?: any;
+    scheduled_class?: Class;
     status?: string;
 }
+
+const BASE_CARD_CLASS = 'card bg-base-100 shadow-xl';
+const CANCELLED_CARD_CLASS = 'card bg-error shadow-xl opacity-50';
+const CHANGED_CARD_CLASS = 'card bg-info shadow-xl';
+
 
 export default function ScheduleCard({scheduled_class}: ScheduleCardProps): JSX.Element {
     const [isModalOpen, setModalOpen] = createSignal(false);
 
+    // Use a more descriptive function name
+    function getCardClassBasedOnStatus(status: string) {
+        let cardClass = BASE_CARD_CLASS;
 
-    function determineCardClass(status: string) {
         if (status === 'Aflyst!') {
-            return 'card bg-error shadow-xl opacity-50';
+            cardClass = CANCELLED_CARD_CLASS;
         } else if (status === 'Ændret!') {
-            return 'card bg-info shadow-xl';
+            cardClass = CHANGED_CARD_CLASS;
         }
-        return 'card bg-base-100 shadow-xl';
+        return cardClass;
+    }
+
+    function openModal() {
+        setModalOpen(true);
     }
 
     if (!scheduled_class) {
@@ -33,8 +44,9 @@ export default function ScheduleCard({scheduled_class}: ScheduleCardProps): JSX.
 
     return (
         <>
-            <div class={determineCardClass(scheduled_class.status)} onClick={() => setModalOpen(true)}>
-                <div class="card-body p-2">
+            <div class={`${getCardClassBasedOnStatus(scheduled_class.status)} hover:scale-105 transition-transform`}
+                 onClick={openModal}>
+                <div class="card-body p-2 ">
                     <h2 class="card-title text-sm font-bold">
                         {scheduled_class.class_name}
                     </h2>
@@ -43,7 +55,7 @@ export default function ScheduleCard({scheduled_class}: ScheduleCardProps): JSX.
                 </div>
             </div>
             {isModalOpen() &&
-                <ClassDrawer show={isModalOpen()} onClose={() => setModalOpen(false)} class={scheduled_class}/>}
+                <ClassDrawer initialShow={isModalOpen()} class={scheduled_class} setModalOpen={setModalOpen}/>}
         </>
     );
 }
