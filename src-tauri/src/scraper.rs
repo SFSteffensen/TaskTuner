@@ -57,6 +57,7 @@ struct ClassDetails {
     resources: String,
     notes: String,
     detailed_link: String,
+    date_time: String, // Time for calendar events
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -288,6 +289,8 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
         let ressource_regex = Regex::new(r"Resource: (.+)").unwrap();
         let teacher_regex = Regex::new(r"Lærer: ([^\n]+)").unwrap();
         let note_regex = Regex::new(r"Note:(.+)").unwrap();
+        let date_regex =
+            Regex::new(r"(\d{1,2}/\d{1,2})-(\d{4}) (\d{2}:\d{2}) til (\d{2}:\d{2})").unwrap();
         let exam_regex = Regex::new(r"ProeveholdId").unwrap();
 
         let mut classes = Vec::new();
@@ -325,6 +328,19 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
             let room = room_regex
                 .captures(tooltip)
                 .map_or_else(|| "Room not found".to_string(), |caps| caps[1].to_string());
+
+            let date_time = date_regex.captures(tooltip).map_or_else(
+                || "Date not found".to_string(),
+                |caps| {
+                    format!(
+                        "{}/{}/{} - {}-{}",
+                        &caps[1], &caps[2], &caps[2], &caps[3], &caps[4]
+                    )
+                },
+            );
+
+            // Remove the duplicate year
+            let date_time = date_time.replacen(&format!("/{} ", year), " ", 1);
 
             if let Some(url) = detail_link {
                 let full_url = format!("https://www.lectio.dk{}", url);
@@ -397,6 +413,7 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
                             notes,
                             day,
                             detailed_link: full_url,
+                            date_time,
                         });
                     } else {
                         // Regular class details
@@ -432,6 +449,7 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
                             notes,
                             day,
                             detailed_link: full_url,
+                            date_time,
                         });
                     }
                 } else {

@@ -1,7 +1,19 @@
 // useScheduleData.ts
 import { createSignal, onCleanup, onMount } from 'solid-js';
 import { invoke } from '@tauri-apps/api/core';
+import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
 import { getWeekNumber } from "../Util/getWeekNumber.ts";
+
+async function checkNotificationPermission() {
+  let permissionGranted = await isPermissionGranted();
+
+  if (!permissionGranted) {
+    const permission = await requestPermission();
+    permissionGranted = permission === 'granted';
+  }
+
+  return permissionGranted;
+}
 
 export default function useScheduleData() {
   const [scheduleData, setScheduleData] = createSignal<ScheduleData>({});
@@ -16,31 +28,39 @@ export default function useScheduleData() {
     return cachedData ? JSON.parse(cachedData) : null;
   }
 
-  async function fetchSchedule(ignoreCache = false) {
-    const week = selectedWeek();
+  async function fetchSchedule(ignoreCache = false, week?: number) {
+    const currentWeek = selectedWeek();
+    const targetWeek = week ?? currentWeek;
     if (!ignoreCache) {
-      const cachedData = getCachedScheduleData(week);
+      const cachedData = getCachedScheduleData(targetWeek);
       if (cachedData && Array.isArray(cachedData)) {
-        console.log(`Using cached data for week ${week}`);
+        console.log(`Using cached data for week ${targetWeek}`);
         organizeSchedule(cachedData);
-        console.log('cachedData:', cachedData);
-        return;
+        return cachedData;
       }
     }
     try {
       const schoolId = localStorage.getItem('selectedSchoolId') || '';
       const response = await invoke('get_schedule', {
         schoolId: schoolId,
-        week: week,
+        week: targetWeek,
       }) satisfies string;
       const parsedData: Class[] = JSON.parse(response);
       if (Array.isArray(parsedData)) {
+        const previousData = getCachedScheduleData(targetWeek);
+        if (JSON.stringify(previousData) !== JSON.stringify(parsedData)) {
+          const permissionGranted = await checkNotificationPermission();
+          if (permissionGranted) {
+            sendNotification({ title: 'Schedule Update', body: `Schedule updated for week ${targetWeek}` });
+          }
+        }
         organizeSchedule(parsedData);
-        cacheScheduleData(week, parsedData);
+        cacheScheduleData(targetWeek, parsedData);
         console.log('Schedule data fetched successfully: ', parsedData);
       } else {
         console.error('Error: parsed data is not an array');
       }
+      return parsedData;
     } catch (error) {
       console.error('Error fetching scheduled_class:', error);
     }
@@ -59,6 +79,15 @@ export default function useScheduleData() {
     setScheduleData(scheduleMap);
   }
 
+  async function refetchSchedules() {
+    const currentWeek = getWeekNumber(new Date());
+    const weeksToFetch = [currentWeek, currentWeek + 1, currentWeek + 2];
+
+    for (const week of weeksToFetch) {
+      await fetchSchedule(true, week);
+    }
+  }
+
   function handleWeekChange(newWeek: number) {
     setSelectedWeek(newWeek);
     fetchSchedule();
@@ -68,7 +97,7 @@ export default function useScheduleData() {
     fetchSchedule().then(() => {
       const interval = setInterval(() => {
         if (selectedWeek() === getWeekNumber(new Date())) {
-          fetchSchedule(true); // Ignore cache for current week
+          refetchSchedules();
         }
       }, 300000); // 300000 ms = 5 minutes
       onCleanup(() => clearInterval(interval));
