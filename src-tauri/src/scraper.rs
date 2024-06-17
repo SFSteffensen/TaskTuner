@@ -1,4 +1,6 @@
 use chrono::Datelike;
+use chrono::NaiveDate;
+use chrono::Weekday;
 use chrono::{Local, NaiveDateTime};
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -261,7 +263,7 @@ pub fn get_dashboard(school_id: &str) -> String {
 fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn Error>> {
     let client_opt = CLIENT_MANAGER.get_client();
 
-    // get current year and convert to string
+    // Get current year and convert to string
     let year = Local::now().year().to_string();
 
     if let Some(client) = client_opt {
@@ -286,6 +288,7 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
         let ressource_regex = Regex::new(r"Resource: (.+)").unwrap();
         let teacher_regex = Regex::new(r"Lærer: ([^\n]+)").unwrap();
         let note_regex = Regex::new(r"Note:(.+)").unwrap();
+        let exam_regex = Regex::new(r"ProeveholdId").unwrap();
 
         let mut classes = Vec::new();
 
@@ -328,27 +331,94 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
 
             if let Some(url) = detail_link {
                 let full_url = format!("https://www.lectio.dk{}", url);
-                println!("Fetching detailed page: {}", full_url);
-                let detail_response = client.get(full_url).send()?;
+                println!("Fetching detailed page: {}", &full_url);
+                let detail_response = client.get(&full_url).send()?;
                 if detail_response.status().is_success() {
                     let detail_document = Html::parse_document(&detail_response.text()?);
-                    let homework_selector =
-                        Selector::parse("div#s_m_Content_Content_tocAndToolbar_inlineHomeworkDiv")
-                            .unwrap();
-                    detailed_homework = detail_document
-                        .select(&homework_selector)
-                        .next()
-                        .map(|div| div.text().collect::<Vec<_>>().join(" "))
-                        .unwrap_or_else(|| "No detailed homework provided".to_string());
 
-                    // Extract day from the detail page
-                    let day_info = detail_document
-                        .select(&Selector::parse("div.s2skemabrikcontent").unwrap())
-                        .next();
-                    if let Some(element) = day_info {
-                        day = day_regex
-                            .find(&element.inner_html())
-                            .map_or("Day not found".to_string(), |m| m.as_str().to_string());
+                    // Check if it is an exam
+                    if exam_regex.is_match(&full_url.as_str()) {
+                        // Extract the exam date from the tooltip
+                        let exam_date_regex = Regex::new(r"(\d{1,2}/\d{1,2}-\d{4})").unwrap();
+                        let exam_date = exam_date_regex.captures(tooltip).map_or_else(
+                            || "Exam date not found".to_string(),
+                            |caps| format!("{}", &caps[1]),
+                        );
+
+                        // Parse exam date to get the weekday
+                        if let Ok(date) = NaiveDate::parse_from_str(&exam_date, "%d/%m-%Y") {
+                            println!("Parsed date: {}", date); // Log the parsed date
+                            day = match date.weekday() {
+                                Weekday::Mon => "ma",
+                                Weekday::Tue => "ti",
+                                Weekday::Wed => "on",
+                                Weekday::Thu => "to",
+                                Weekday::Fri => "fr",
+                                _ => "unknown",
+                            }
+                            .to_string();
+                        } else {
+                            println!("Kunne ikke analysere dato: {}", exam_date);
+                            day = "ukendt".to_string();
+                        }
+
+                        // Additional scraping logic for exams
+                        let homework_selector = Selector::parse(
+                            "div#s_m_Content_Content_tocAndToolbar_inlineHomeworkDiv",
+                        )
+                        .unwrap();
+                        detailed_homework = detail_document
+                            .select(&homework_selector)
+                            .next()
+                            .map(|div| div.text().collect::<Vec<_>>().join(" "))
+                            .unwrap_or_else(|| "Ingen detaljerede lektier udleveret".to_string());
+
+                        classes.push(ClassDetails {
+                            status,
+                            class_name,
+                            teacher,
+                            room,
+                            description,
+                            time,
+                            homework: detailed_homework,
+                            resources: ressource,
+                            notes,
+                            day,
+                        });
+                    } else {
+                        // Regular class details
+                        let homework_selector = Selector::parse(
+                            "div#s_m_Content_Content_tocAndToolbar_inlineHomeworkDiv",
+                        )
+                        .unwrap();
+                        detailed_homework = detail_document
+                            .select(&homework_selector)
+                            .next()
+                            .map(|div| div.text().collect::<Vec<_>>().join(" "))
+                            .unwrap_or_else(|| "Ingen detaljerede lektier udleveret".to_string());
+
+                        // Extract day from the detail page
+                        let day_info = detail_document
+                            .select(&Selector::parse("div.s2skemabrikcontent").unwrap())
+                            .next();
+                        if let Some(element) = day_info {
+                            day = day_regex
+                                .find(&element.inner_html())
+                                .map_or("Dag ikke fundet".to_string(), |m| m.as_str().to_string());
+                        }
+
+                        classes.push(ClassDetails {
+                            status,
+                            class_name,
+                            teacher,
+                            room,
+                            description,
+                            time,
+                            homework: detailed_homework,
+                            resources: ressource,
+                            notes,
+                            day,
+                        });
                     }
                 } else {
                     println!(
@@ -357,19 +427,6 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
                     );
                 }
             }
-
-            classes.push(ClassDetails {
-                status,
-                class_name,
-                teacher,
-                room,
-                description,
-                time,
-                homework: detailed_homework,
-                resources: ressource,
-                notes,
-                day,
-            });
         }
         serde_json::to_string(&classes).map_err(Into::into)
     } else {
