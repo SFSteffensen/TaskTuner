@@ -46,7 +46,6 @@ lazy_static! {
 
 #[derive(Serialize, Deserialize)]
 struct ClassDetails {
-    // TODO: add Status field
     status: String,
     class_name: String,
     teacher: String,
@@ -57,6 +56,7 @@ struct ClassDetails {
     homework: String,
     resources: String,
     notes: String,
+    detailed_link: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -325,9 +325,6 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
             let room = room_regex
                 .captures(tooltip)
                 .map_or_else(|| "Room not found".to_string(), |caps| caps[1].to_string());
-            let notes = note_regex
-                .captures(tooltip)
-                .map_or_else(|| "".to_string(), |caps| caps[1].trim().to_string());
 
             if let Some(url) = detail_link {
                 let full_url = format!("https://www.lectio.dk{}", url);
@@ -335,6 +332,21 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
                 let detail_response = client.get(&full_url).send()?;
                 if detail_response.status().is_success() {
                     let detail_document = Html::parse_document(&detail_response.text()?);
+
+                    // Extract the note from the detailed page
+                    let note_selector =
+                        Selector::parse("#s_m_Content_Content_tocAndToolbar_ActNoteTB_tb").unwrap();
+                    let notes = detail_document.select(&note_selector).next().map_or(
+                        "Ingen Noter".to_string(),
+                        |textarea| {
+                            textarea
+                                .text()
+                                .collect::<Vec<_>>()
+                                .join(" ")
+                                .trim()
+                                .to_string()
+                        },
+                    );
 
                     // Check if it is an exam
                     if exam_regex.is_match(&full_url.as_str()) {
@@ -384,6 +396,7 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
                             resources: ressource,
                             notes,
                             day,
+                            detailed_link: full_url,
                         });
                     } else {
                         // Regular class details
@@ -418,6 +431,7 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
                             resources: ressource,
                             notes,
                             day,
+                            detailed_link: full_url,
                         });
                     }
                 } else {
