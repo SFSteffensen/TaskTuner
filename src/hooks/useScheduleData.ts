@@ -45,6 +45,7 @@ export default function useScheduleData() {
         schoolId: schoolId,
         week: targetWeek,
       }) satisfies string;
+      console.log('response:', response)
       const parsedData: Class[] = JSON.parse(response);
       if (Array.isArray(parsedData)) {
         const previousData = getCachedScheduleData(targetWeek);
@@ -71,10 +72,11 @@ export default function useScheduleData() {
     data.forEach((_class) => {
       const day = _class.day;
       const time = _class.time;
+      const dateTime = _class.date_time; // Extract the date_time field
       if (!scheduleMap[time]) {
         scheduleMap[time] = {};
       }
-      scheduleMap[time][day] = _class;
+      scheduleMap[time][day] = {..._class, date_time: dateTime}; // Add the date_time field to the scheduleMap
     });
     setScheduleData(scheduleMap);
   }
@@ -104,5 +106,5 @@ export default function useScheduleData() {
     });
   });
 
-  return { scheduleData, selectedWeek, handleWeekChange };
+  return {scheduleData, selectedWeek, handleWeekChange, getCachedScheduleData};
 }

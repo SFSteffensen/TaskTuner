@@ -6,6 +6,7 @@ type Class = {
   description: string;
   time: string;
   day: string;
+  date_time: string;
   homework: string;
   resources: string;
   notes: string;
