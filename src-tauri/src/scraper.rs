@@ -276,7 +276,14 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
             None => format!("https://www.lectio.dk/lectio/{}/SkemaNy.aspx", school_id),
         };
 
+        // Log the URL to ensure it is correct
+        println!("Fetching schedule from URL: {}", schedule_url);
+
         let resp = client.get(&schedule_url).send()?;
+        if !resp.status().is_success() {
+            return Err(format!("Failed to fetch schedule: {}", resp.status()).into());
+        }
+
         let document = Html::parse_document(&resp.text()?);
 
         let class_selector = Selector::parse("div.s2skemabrikcontainer a.s2skemabrik").unwrap();
@@ -288,7 +295,6 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
         let description_regex = Regex::new(r"Øvrigt indhold:(.+?)(?:Note:|$)").unwrap();
         let ressource_regex = Regex::new(r"Resource: (.+)").unwrap();
         let teacher_regex = Regex::new(r"Lærer: ([^\n]+)").unwrap();
-        let note_regex = Regex::new(r"Note:(.+)").unwrap();
         let date_regex =
             Regex::new(r"(\d{1,2}/\d{1,2})-(\d{4}) (\d{2}:\d{2}) til (\d{2}:\d{2})").unwrap();
         let exam_regex = Regex::new(r"ProeveholdId").unwrap();
@@ -344,7 +350,7 @@ fn scrape_schedule(school_id: &str, week: Option<i8>) -> Result<String, Box<dyn 
 
             if let Some(url) = detail_link {
                 let full_url = format!("https://www.lectio.dk{}", url);
-                println!("Fetching detailed page: {}", &full_url);
+                println!("Fetching detailed page: {}", full_url);
                 let detail_response = client.get(&full_url).send()?;
                 if detail_response.status().is_success() {
                     let detail_document = Html::parse_document(&detail_response.text()?);
