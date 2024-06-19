@@ -3,10 +3,12 @@ import { createEvents, EventAttributes, EventStatus } from 'ics';
 export function createICalendarEvents(classes: Class[]) {
     const events = classes.map((classItem) => {
         // Parse the date and time from the classItem
-        const [day, month, year] = classItem.date_time.split(' ')[0].split('/').map(Number);
+        const [day, month, year] = classItem.date_time
+            .split(' ')[0]
+            .split('/')
+            .map(Number);
         const [startTime, endTime] = classItem.time.split(' - ');
         const [startHour, startMinute] = startTime.split(':').map(Number);
-
 
         return {
             start: [year, month, day, startHour, startMinute],
@@ -15,14 +17,15 @@ export function createICalendarEvents(classes: Class[]) {
             description: classItem.description,
             duration: getDuration(startTime, endTime),
         } satisfies EventAttributes;
-
-
     });
     const calendarEvents = createEvents(events);
 
     // Check if there was an error creating the events
     if (calendarEvents.error) {
-        console.error('Failed to create calendar events:', calendarEvents.error);
+        console.error(
+            'Failed to create calendar events:',
+            calendarEvents.error
+        );
         throw new Error('Failed to create calendar events');
     }
 
@@ -33,16 +36,18 @@ export function createICalendarEvents(classes: Class[]) {
 function statusFromLectio(status: string): EventStatus {
     switch (status) {
         case 'Aflyst!':
-            return "CANCELLED";
+            return 'CANCELLED';
         case 'Ændret!':
-            return "TENTATIVE";
+            return 'TENTATIVE';
         default:
-            return "CONFIRMED";
+            return 'CONFIRMED';
     }
 }
 
-
-function getDuration(startTime: string, endTime: string): { hours: number, minutes: number } {
+function getDuration(
+    startTime: string,
+    endTime: string
+): { hours: number; minutes: number } {
     // Create Date objects for the start time and end time
     const startDate = new Date(`1970-01-01T${startTime}:00`);
     const endDate = new Date(`1970-01-01T${endTime}:00`);
@@ -57,5 +62,5 @@ function getDuration(startTime: string, endTime: string): { hours: number, minut
     const hours = Math.floor(diffMins / 60);
     const minutes = diffMins % 60;
 
-    return {hours, minutes};
+    return { hours, minutes };
 }
