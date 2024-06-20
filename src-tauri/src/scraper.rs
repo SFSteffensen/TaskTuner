@@ -132,6 +132,17 @@ struct GradeDetail {
     weight: f32,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct DiplomaDetail {
+    subject: String,
+    year_weight: String,
+    year_grade: String,
+    year_ects: String,
+    exam_weight: String,
+    exam_grade: String,
+    exam_ects: String,
+}
+
 #[tauri::command]
 pub fn get_schools() -> HashMap<String, String> {
     // Make a GET request to the iframe's source URL
@@ -859,6 +870,52 @@ pub fn get_grades(school_id: &str) -> String {
             });
             serde_json::to_string(&data).unwrap()
         }
+        Err(e) => format!("Error: {}", e),
+    }
+}
+
+fn scrape_diploma(school_id: &str) -> Result<Vec<DiplomaDetail>, Box<dyn Error>> {
+    let client = CLIENT_MANAGER
+        .get_client()
+        .ok_or("Client not initialized")?;
+    let url = format!(
+        "https://www.lectio.dk/lectio/{}/grades/grade_report.aspx",
+        school_id
+    );
+    let res = client.get(&url).send()?;
+    if res.status() != 200 {
+        return Err("Failed to fetch diploma page".into());
+    }
+
+    let body = res.text()?;
+    let document = Html::parse_document(&body);
+
+    let diploma_selector = Selector::parse("#printareaDiplomaLines tr").unwrap();
+    let mut diploma_details = Vec::new();
+
+    for element in document.select(&diploma_selector).skip(2) {
+        // Skipping header rows
+        let columns: Vec<_> = element.select(&Selector::parse("td").unwrap()).collect();
+        if columns.len() >= 7 {
+            diploma_details.push(DiplomaDetail {
+                subject: columns[0].text().collect::<String>(),
+                year_weight: columns[1].text().collect::<String>(),
+                year_grade: columns[2].text().collect::<String>(),
+                year_ects: columns[3].text().collect::<String>(),
+                exam_weight: columns[4].text().collect::<String>(),
+                exam_grade: columns[5].text().collect::<String>(),
+                exam_ects: columns[6].text().collect::<String>(),
+            });
+        }
+    }
+
+    Ok(diploma_details)
+}
+
+#[tauri::command]
+pub fn get_diploma(school_id: &str) -> String {
+    match scrape_diploma(school_id) {
+        Ok(diploma_details) => serde_json::to_string(&diploma_details).unwrap(),
         Err(e) => format!("Error: {}", e),
     }
 }
